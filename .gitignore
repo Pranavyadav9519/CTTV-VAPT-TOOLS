@@ -1,0 +1,70 @@
+# Byte-compiled / C Extensions
+*.pyc
+*.pyo
+__pycache__/
+.pytest_cache/
+.ruff_cache/
+.flake8
+
+# Virtualenvs
+.venv/
+venv/
+env/
+ENV/
+
+# IDEs
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+backend/logs/*.log
+backend/vapt_tool.db
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+
+# Reports and outputs
+*.pdf
+*.json
+*.html
+report_*.*
+enhanced_report*.*
+test_report*.*
+backend/reports/
+
+# Data (sensitive)
+backend/data/*.json
+!backend/data/cctv_vulnerabilities.json  # Keep vuln signatures
+!backend/data/default_credentials.json  # Keep creds list (review if needed)
+data/*.json
+
+# Docker
+docker-compose.override.yml
+
+# Pre-commit
+.pre-commit-config.yaml
+
+# Alembic
+alembic.ini
+
+# Dependencies
+Pipfile.lock
+poetry.lock
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.cache
+
+# Deployment
+.deploy/
+helm/values-*.yaml

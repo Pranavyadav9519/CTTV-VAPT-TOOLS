@@ -1,47 +1,141 @@
 version: '3.8'
+
 services:
+  # PostgreSQL Database
   db:
-    image: postgres:15
+    image: postgres:15-alpine
+    container_name: vapt-db
     environment:
-      POSTGRES_USER: vapt
-      POSTGRES_PASSWORD: vapt
-      POSTGRES_DB: vapt
+      POSTGRES_USER: ${DB_USER:-vapt}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-secure_password}
+      POSTGRES_DB: ${DB_NAME:-vapt_db}
     ports:
       - '5432:5432'
     volumes:
       - db_data:/var/lib/postgresql/data
+      - ./scripts/init-db.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U vapt"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    networks:
+      - vapt-network
 
+  # Redis Cache & Broker
   redis:
-    image: redis:7
+    image: redis:7-alpine
+    container_name: vapt-redis
     ports:
       - '6379:6379'
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    networks:
+      - vapt-network
 
+  # Backend Flask API
   backend:
     build:
       context: .
       dockerfile: backend/Dockerfile
+    container_name: vapt-backend
     environment:
-      DATABASE_URL: postgresql://vapt:vapt@db:5432/vapt
+      APP_ENV: ${APP_ENV:-production}
+      DEBUG: ${DEBUG:-False}
+      DATABASE_URL: postgresql://${DB_USER:-vapt}:${DB_PASSWORD:-secure_password}@db:5432/${DB_NAME:-vapt_db}
       REDIS_URL: redis://redis:6379/0
-      ENCRYPTION_KEY: 'replace-me-with-fernet-key'
+      SECRET_KEY: ${SECRET_KEY:-change-me-to-random-secret}
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY:-change-me-to-random-secret}
+      CELERY_BROKER_URL: redis://redis:6379/0
+      CELERY_RESULT_BACKEND: redis://redis:6379/0
     ports:
       - '5000:5000'
     depends_on:
-      - db
-      - redis
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - ./backend:/app:ro
+      - backend_reports:/app/reports
+      - backend_logs:/app/logs
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
+      interval: 30s
+      timeout: 10s
+      start_period: 10s
+      retries: 3
+    restart: unless-stopped
+    networks:
+      - vapt-network
+
+  # Celery Worker for Async Tasks
   worker:
     build:
       context: .
-      dockerfile: backend/Dockerfile.worker
+      dockerfile: backend/Dockerfile
+    container_name: vapt-worker
     environment:
-      DATABASE_URL: postgresql://vapt:vapt@db:5432/vapt
+      APP_ENV: ${APP_ENV:-production}
+      DEBUG: ${DEBUG:-False}
+      DATABASE_URL: postgresql://${DB_USER:-vapt}:${DB_PASSWORD:-secure_password}@db:5432/${DB_NAME:-vapt_db}
       REDIS_URL: redis://redis:6379/0
-      ENCRYPTION_KEY: 'replace-me-with-fernet-key'
       CELERY_BROKER_URL: redis://redis:6379/0
       CELERY_RESULT_BACKEND: redis://redis:6379/0
     depends_on:
-      - db
-      - redis
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - ./backend:/app:ro
+      - worker_reports:/app/reports
+      - worker_logs:/app/logs
+    restart: unless-stopped
+    command: celery -A backend.celery_app worker --loglevel=info --concurrency=4
+    networks:
+      - vapt-network
 
+  # Frontend Web UI (Optional)
+  frontend:
+    image: node:18-alpine
+    container_name: vapt-frontend
+    working_dir: /app
+    volumes:
+      - ./frontend:/app
+    ports:
+      - '3000:3000'
+    environment:
+      NODE_ENV: development
+      REACT_APP_API_URL: http://localhost:5000/api
+    command: python -m http.server 3000
+    restart: unless-stopped
+    networks:
+      - vapt-network
+
+# Volumes for data persistence
 volumes:
   db_data:
+    driver: local
+  redis_data:
+    driver: local
+  backend_reports:
+    driver: local
+  backend_logs:
+    driver: local
+  worker_reports:
+    driver: local
+  worker_logs:
+    driver: local
+
+# Custom network
+networks:
+  vapt-network:
+    driver: bridge

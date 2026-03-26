@@ -15,9 +15,81 @@ ENV/
 # IDEs
 .vscode/
 .idea/
+*.swp
+*.swo
+*.iml
 
 # OS
 .DS_Store
+Thumbs.db
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+vapt_tool.db
+
+# Generated reports & test artifacts
+/backend/reports/
+/data/reports/
+/test_reports/
+*.pdf
+report_*.html
+report_*.json
+report_*.txt
+test_report*.html
+test_report*.json
+test_report*.txt
+test_report*.pdf
+enhanced_report*.txt
+CLEANUP_SUMMARY.md
+
+# Logs
+/backend/logs/
+*.log
+logs/
+node_modules/.bin/
+
+# Test coverage
+.coverage
+.coverage.*
+htmlcov/
+coverage.xml
+.pytest_cache/
+
+# Build artifacts
+build/
+dist/
+*.egg-info/
+.eggs/
+
+# Node
+node_modules/
+npm-debug.log
+yarn-error.log
+package-lock.json
+
+# Temporary files
+*.tmp
+*.bak
+*.swp
+*~
+.DS_Store
+
+# IDE directories
+.vscode/
+.idea/
+*.code-workspace
+.vim/
+.emacs.d/
+
+# Docker
+docker-compose.override.yml
 Thumbs.db
 
 # Logs

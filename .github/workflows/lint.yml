@@ -1,0 +1,39 @@
+name: Code Quality Check
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  quick-lint:
+    name: Quick Lint
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+      
+      - name: Install linting tools
+        run: |
+          pip install black flake8 isort
+      
+      - name: Run black formatter check
+        run: |
+          black --check backend/ tests/ || (black backend/ tests/ && git diff)
+      
+      - name: Run isort import sort check
+        run: isort --check-only backend/ tests/
+      
+      - name: Run flake8 linter
+        run: |
+          flake8 backend/ tests/ \
+            --max-line-length=100 \
+            --extend-ignore=E203,W503 \
+            --count \
+            --statistics

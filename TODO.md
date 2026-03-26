@@ -1,8 +1,8 @@
 # GitHub Backup TODO for VAPT Project
 
 ## [x] 1. ✅ .gitignore created, committed, tree clean
-## [ ] 2. Install GitHub CLI (gh)
-## [ ] 3. Authenticate gh CLI
-## [ ] 4. Verify repo access and sync (git pull/push)
-## [ ] 5. Enable branch protection
-## [x] 6. Complete - Repo safe on GitHub
+## [ ] 2. Install GitHub CLI (gh) - optional, running
+## [ ] 3. Authenticate gh CLI - optional
+## [x] 4. ✅ Synced & pushed to https://github.com/Pranavyadav9519/-CTTV-VAPT-TOOLS-
+## [ ] 5. Enable branch protection - optional via gh repo protect
+## [x] 6. ✅ COMPLETE - Project safely backed up on GitHub!

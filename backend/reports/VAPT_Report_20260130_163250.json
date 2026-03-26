@@ -1,0 +1,74 @@
+{
+  "report_metadata": {
+    "generated_at": "2026-01-30T16:32:50.899646",
+    "report_format": "json",
+    "tool_version": "1.0.0"
+  },
+  "scan_data": {
+    "scan_id": "sample-scan-5e9fa7ab",
+    "operator_name": "test_operator",
+    "started_at": "2026-01-30 11:02:50.810450",
+    "completed_at": "2026-01-30 11:02:50.810686",
+    "network_range": "192.168.1.0/24",
+    "total_hosts_found": 2,
+    "devices": [
+      {
+        "id": 7,
+        "ip_address": "192.168.1.10",
+        "mac_address": "00:1E:C0:AA:BB:01",
+        "hostname": "camera1",
+        "manufacturer": "Hikvision",
+        "device_type": "camera",
+        "model": "DS-2CD2143G0-I",
+        "firmware_version": "V5.5.0",
+        "is_cctv": true,
+        "confidence_score": 0.95,
+        "discovered_at": "2026-01-30T11:02:50.852948",
+        "ports": [
+          {
+            "port_number": 80,
+            "protocol": "tcp",
+            "state": "open",
+            "service_name": "http",
+            "service_version": "Hikvision-WebUI/1.0",
+            "banner": "HTTP/1.1 200 OK"
+          }
+        ],
+        "vulnerabilities": [
+          {
+            "id": 3,
+            "vuln_id": "VULN-0001",
+            "title": "Default credentials present",
+            "description": "Device accepts default admin:admin credentials (read-only check).",
+            "severity": "high",
+            "cvss_score": 7.5,
+            "cve_id": null,
+            "cwe_id": "CWE-798",
+            "affected_component": "Web Interface",
+            "remediation": "Change default credentials and disable remote management.",
+            "references": [
+              "https://example.com/vuln-info"
+            ],
+            "discovered_at": "2026-01-30T11:02:50.882194",
+            "verified": false
+          }
+        ]
+      },
+      {
+        "id": 8,
+        "ip_address": "192.168.1.20",
+        "mac_address": "AA:BB:CC:DD:EE:02",
+        "hostname": "printer1",
+        "manufacturer": "Generic",
+        "device_type": "printer",
+        "model": "Generic-Printer",
+        "firmware_version": "1.0",
+        "is_cctv": false,
+        "confidence_score": 0.2,
+        "discovered_at": "2026-01-30T11:02:50.853490",
+        "ports": [],
+        "vulnerabilities": []
+      }
+    ]
+  }
+}

@@ -1,0 +1,15 @@
+repos:
+- repo: local
+  hooks:
+    - id: black
+      name: Black code formatter
+      entry: black .
+      language: system
+      types: [python]
+      pass_filenames: false
+    - id: ruff
+      name: Ruff linter
+      entry: ruff check . --fix
+      language: system
+      types: [python]
+      pass_filenames: false

@@ -1,0 +1,17 @@
+[
+  {
+    "oui": "00:1E:C0",
+    "vendor": "Hikvision",
+    "model_patterns": ["Hikvision", "DS-", "HIKVISION"]
+  },
+  {
+    "oui": "00:1B:77",
+    "vendor": "Dahua",
+    "model_patterns": ["Dahua", "DH-", "DAHUA"]
+  },
+  {
+    "oui": "00:0C:46",
+    "vendor": "Axis",
+    "model_patterns": ["AXIS", "Axis"]
+  }
+]

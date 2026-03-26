@@ -1,0 +1,98 @@
+====================================================================================================
+CCTV VULNERABILITY ASSESSMENT & PENETRATION TEST (VAPT) REPORT
+====================================================================================================
+
+SCAN INFORMATION
+----------------------------------------------------------------------------------------------------
+Scan ID:          sample-scan-001
+Operator:         test_operator
+Network Range:    192.168.1.0/24
+Status:           COMPLETED
+Started:          2026-01-30 10:33:52
+Completed:        2026-01-30 10:33:52
+
+EXECUTIVE SUMMARY
+----------------------------------------------------------------------------------------------------
+Total Devices Discovered:      2
+CCTV Devices Found:            1
+Total Open Ports:              0
+Total Vulnerabilities Found:   1
+
+VULNERABILITY SEVERITY BREAKDOWN
+----------------------------------------------------------------------------------------------------
+CRITICAL:    0 vulnerabilities
+HIGH:        1 vulnerabilities
+MEDIUM:      0 vulnerabilities
+LOW:         0 vulnerabilities
+
+
+DETAILED VULNERABILITY ANALYSIS
+====================================================================================================
+
+VULNERABILITY #1
+----------------------------------------------------------------------------------------------------
+CVE ID:              N/A
+Title:               Default credentials present
+Severity:            HIGH
+CVSS Score:          7.5
+CWE ID:              CWE-798
+Affected Device:     192.168.1.10
+Affected Component:  Web Interface
+Discovered At:       2026-01-30 10:33:52
+Verified:            No
+
+DESCRIPTION:
+Device accepts default admin:admin credentials (read-only check).
+
+REMEDIATION:
+Change default credentials and disable remote management.
+
+PROOF OF CONCEPT:
+Attempted read-only login succeeded
+
+
+
+DISCOVERED DEVICES
+====================================================================================================
+
+DEVICE #1
+----------------------------------------------------------------------------------------------------
+IP Address:        192.168.1.10
+MAC Address:       00:1E:C0:AA:BB:01
+Hostname:          camera1
+Manufacturer:      Hikvision
+Model:             DS-2CD2143G0-I
+Device Type:       camera
+Is CCTV:           Yes
+Firmware Version:  V5.5.0
+Confidence Score:  0.95
+Open Ports:        0
+
+  OPEN PORTS & SERVICES:
+
+  Device Risk Level: LOW
+
+
+DEVICE #2
+----------------------------------------------------------------------------------------------------
+IP Address:        192.168.1.20
+MAC Address:       AA:BB:CC:DD:EE:02
+Hostname:          printer1
+Manufacturer:      Generic
+Model:             Generic-Printer
+Device Type:       printer
+Is CCTV:           No
+Firmware Version:  1.0
+Confidence Score:  0.2
+Open Ports:        0
+
+  OPEN PORTS & SERVICES:
+
+  Device Risk Level: SAFE
+
+
+
+====================================================================================================
+Report Generated: 2026-03-01 06:52:56 UTC
+CCTV VAPT Platform
+====================================================================================================

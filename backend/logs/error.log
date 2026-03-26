@@ -1,0 +1,9 @@
+WARNING: No libpcap provider available ! pcap won't be used
+2026-02-25 21:18:31,816 - modules.vulnerability_scanner - INFO - Loaded 23 CVEs from database
+2026-02-25 21:18:31,817 - modules.vulnerability_scanner - INFO - Loaded credentials for 14 manufacturers
+2026-02-25 21:18:31,818 - modules.report_generator - INFO - Report generator initialized with 6-layer enterprise pipeline
+2026-02-25 21:18:33,150 - werkzeug - INFO - WARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5000
+ * Running on http://192.168.29.152:5000
+2026-02-25 21:18:33,151 - werkzeug - INFO - Press CTRL+C to quit

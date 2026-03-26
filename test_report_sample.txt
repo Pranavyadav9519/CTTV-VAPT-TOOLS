@@ -1,0 +1,42 @@
+====================================================================================================
+CCTV VULNERABILITY ASSESSMENT & PENETRATION TEST (VAPT) REPORT
+====================================================================================================
+
+SCAN INFORMATION
+----------------------------------------------------------------------------------------------------
+Scan ID:          SCAN-EC22832C
+Operator:         web_user
+Network Range:    192.168.56.0/24
+Status:           COMPLETED
+Started:          2026-02-27 14:42:07
+Completed:        2026-02-27 14:42:32
+
+EXECUTIVE SUMMARY
+----------------------------------------------------------------------------------------------------
+Total Devices Discovered:      0
+CCTV Devices Found:            0
+Total Open Ports:              0
+Total Vulnerabilities Found:   0
+
+VULNERABILITY SEVERITY BREAKDOWN
+----------------------------------------------------------------------------------------------------
+CRITICAL:    0 vulnerabilities
+HIGH:        0 vulnerabilities
+MEDIUM:      0 vulnerabilities
+LOW:         0 vulnerabilities
+
+
+DETAILED VULNERABILITY ANALYSIS
+====================================================================================================
+
+No vulnerabilities found during this scan.
+
+
+DISCOVERED DEVICES
+====================================================================================================
+
+
+====================================================================================================
+Report Generated: 2026-02-27 15:50:21 UTC
+CCTV VAPT Platform
+====================================================================================================

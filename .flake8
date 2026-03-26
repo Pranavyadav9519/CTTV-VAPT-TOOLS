@@ -1,0 +1,5 @@
+[flake8]
+max-line-length = 240
+exclude = .venv,venv,backend/data,frontend,backend/reports,backend/logs,__pycache__
+extend-ignore = E203, W503
+

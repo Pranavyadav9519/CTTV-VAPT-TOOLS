@@ -1,0 +1,42 @@
+====================================================================================================
+CCTV VULNERABILITY ASSESSMENT & PENETRATION TEST (VAPT) REPORT
+====================================================================================================
+
+SCAN INFORMATION
+----------------------------------------------------------------------------------------------------
+Scan ID:          sample-scan-001
+Operator:         test_operator
+Network Range:    192.168.1.0/24
+Status:           COMPLETED
+Started:          2026-01-30 10:33:52
+Completed:        2026-01-30 10:33:52
+
+EXECUTIVE SUMMARY
+----------------------------------------------------------------------------------------------------
+Total Devices Discovered:      0
+CCTV Devices Found:            0
+Total Open Ports:              0
+Total Vulnerabilities Found:   0
+
+VULNERABILITY SEVERITY BREAKDOWN
+----------------------------------------------------------------------------------------------------
+CRITICAL:    0 vulnerabilities
+HIGH:        0 vulnerabilities
+MEDIUM:      0 vulnerabilities
+LOW:         0 vulnerabilities
+
+
+DETAILED VULNERABILITY ANALYSIS
+====================================================================================================
+
+No vulnerabilities found during this scan.
+
+
+DISCOVERED DEVICES
+====================================================================================================
+
+
+====================================================================================================
+Report Generated: 2026-02-27 15:51:30 UTC
+CCTV VAPT Platform
+====================================================================================================

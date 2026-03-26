@@ -1,0 +1,114 @@
+{# EXECUTIVE SUMMARY REPORT TEMPLATE - Non-Technical for Management #}
+<!DOCTYPE html>
+<html>
+<head>
+    <title>{{ report_title }}</title>
+</head>
+<body>
+    <h1>{{ report_title }}</h1>
+
+    <h2>Executive Summary</h2>
+    <p>{{ executive_summary.introduction }}</p>
+
+    <h3>Risk Posture</h3>
+    <p><strong>{{ executive_summary.risk_posture }}</strong></p>
+
+    <h3>Key Statistics</h3>
+    <table>
+        <tr>
+            <td>Total Systems Assessed:</td>
+            <td>{{ metrics.total_systems_assessed }}</td>
+        </tr>
+        <tr>
+            <td>Critical Issues:</td>
+            <td style="color: red;"><strong>{{ metrics.critical_issues }}</strong></td>
+        </tr>
+        <tr>
+            <td>High Issues:</td>
+            <td style="color: orange;"><strong>{{ metrics.high_issues }}</strong></td>
+        </tr>
+        <tr>
+            <td>CCTV Systems Assessed:</td>
+            <td>{{ metrics.cctv_systems_assessed }}</td>
+        </tr>
+    </table>
+
+    <h2>Key Findings</h2>
+    {% for finding in key_findings %}
+    <div style="border-left: 4px solid; padding: 10px; margin: 10px 0;">
+        <h4>{{ finding.title }}</h4>
+        <p><strong>Risk Rating:</strong> {{ finding.risk_rating }}</p>
+        <p><strong>Business Impact:</strong> {{ finding.business_impact }}</p>
+    </div>
+    {% endfor %}
+
+    <h2>Business Impact Assessment</h2>
+    <h3>Security Operations</h3>
+    <p>{{ business_impact.security_operations }}</p>
+
+    <h3>Business Continuity</h3>
+    <p>{{ business_impact.business_continuity }}</p>
+
+    <h3>External Risk</h3>
+    <p>{{ business_impact.external_risk }}</p>
+
+    <h2>Remediation Timeline</h2>
+    <table>
+        <tr>
+            <th>Timeline</th>
+            <th>Count</th>
+            <th>Description</th>
+        </tr>
+        <tr>
+            <td>0-4 Hours (Critical)</td>
+            <td style="color: red;"><strong>{{ timeline.immediate_0_4_hours.count }}</strong></td>
+            <td>{{ timeline.immediate_0_4_hours.description }}</td>
+        </tr>
+        <tr>
+            <td>1 Day (High)</td>
+            <td style="color: orange;"><strong>{{ timeline.urgent_1_day.count }}</strong></td>
+            <td>{{ timeline.urgent_1_day.description }}</td>
+        </tr>
+        <tr>
+            <td>7 Days (Medium)</td>
+            <td style="color: gold;"><strong>{{ timeline.short_term_7_days.count }}</strong></td>
+            <td>{{ timeline.short_term_7_days.description }}</td>
+        </tr>
+        <tr>
+            <td>30 Days (Low)</td>
+            <td style="color: blue;"><strong>{{ timeline.standard_30_days.count }}</strong></td>
+            <td>{{ timeline.standard_30_days.description }}</td>
+        </tr>
+    </table>
+
+    <h2>Strategic Recommendations</h2>
+
+    <h3>Immediate Actions Required</h3>
+    <ul>
+    {% for rec in strategic_recommendations.immediate_actions %}
+        <li>{{ rec }}</li>
+    {% endfor %}
+    </ul>
+
+    <h3>Short-Term Actions (1-7 Days)</h3>
+    <ul>
+    {% for rec in strategic_recommendations.short_term %}
+        <li>{{ rec }}</li>
+    {% endfor %}
+    </ul>
+
+    <h3>Long-Term Improvements</h3>
+    <ul>
+    {% for rec in strategic_recommendations.long_term %}
+        <li>{{ rec }}</li>
+    {% endfor %}
+    </ul>
+
+    <hr>
+    <p style="font-style: italic; color: #666;">
+        <strong>CONFIDENTIAL</strong> - This report contains sensitive security information
+        and is intended only for authorized recipients.
+    </p>
+    <p>Report Generated: {{ generated_at }}</p>
+</body>
+</html>

@@ -1,0 +1,166 @@
+{# TECHNICAL DETAILED REPORT TEMPLATE - For Security Teams #}
+<!DOCTYPE html>
+<html>
+<head>
+    <title>{{ report_title }} - Technical</title>
+    <style>
+        body { font-family: monospace; margin: 20px; }
+        h1 { border-bottom: 3px solid #333; padding-bottom: 10px; }
+        h2 { border-bottom: 2px solid #666; padding-bottom: 5px; margin-top: 30px; }
+        .vulnerability { border-left: 4px solid #c53030; padding: 10px; margin: 15px 0; background-color: #fef5f5; }
+        .critical { color: #c53030; font-weight: bold; }
+        .high { color: #dd6b20; font-weight: bold; }
+        .medium { color: #d69e2e; font-weight: bold; }
+        .low { color: #3182ce; font-weight: bold; }
+        table { border-collapse: collapse; width: 100%; margin: 15px 0; }
+        th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
+        th { background-color: #2b6cb0; color: white; }
+        code { background-color: #f0f0f0; padding: 2px 5px; border-radius: 3px; }
+    </style>
+</head>
+<body>
+    <h1>{{ report_title }}</h1>
+
+    <h2>1. Assessment Methodology</h2>
+    {% for phase in methodology.phases %}
+    <h3>Phase: {{ phase.name }}</h3>
+    <p><strong>Description:</strong> {{ phase.description }}</p>
+    <p><strong>Tools Used:</strong> {{ phase.tools }}</p>
+    {% endfor %}
+
+    <h2>2. Asset Inventory</h2>
+    <table>
+        <tr>
+            <th>IP Address</th>
+            <th>Device Type</th>
+            <th>Manufacturer</th>
+            <th>Model</th>
+            <th>Criticality</th>
+            <th>Risk Rating</th>
+            <th>Vulns</th>
+            <th>Ports</th>
+        </tr>
+        {% for asset in asset_inventory %}
+        <tr>
+            <td><code>{{ asset.ip_address }}</code></td>
+            <td>{{ asset.device_type }}</td>
+            <td>{{ asset.manufacturer }}</td>
+            <td>{{ asset.model }}</td>
+            <td>{{ asset.criticality }}</td>
+            <td class="{{ asset.risk_rating }}">{{ asset.risk_rating | upper }}</td>
+            <td>{{ asset.vulnerability_count }}</td>
+            <td>{{ asset.open_ports }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+
+    <h2>3. Port and Service Analysis</h2>
+    <p><strong>Total Open Ports Discovered:</strong> {{ port_analysis.total_ports_open }}</p>
+    <table>
+        <tr>
+            <th>IP Address</th>
+            <th>Port</th>
+            <th>Protocol</th>
+            <th>Service</th>
+            <th>Version</th>
+            <th>Encrypted</th>
+        </tr>
+        {% for port in port_analysis.ports %}
+        <tr>
+            <td><code>{{ port.asset_ip }}</code></td>
+            <td>{{ port.port_number }}</td>
+            <td>{{ port.protocol }}</td>
+            <td>{{ port.service }}</td>
+            <td>{{ port.version }}</td>
+            <td>{% if port.encrypted %}✓{% else %}✗{% endif %}</td>
+        </tr>
+        {% endfor %}
+    </table>
+
+    <h3>Identified Services</h3>
+    <ul>
+    {% for service in service_fingerprints %}
+        <li><code>{{ service }}</code></li>
+    {% endfor %}
+    </ul>
+
+    <h2>4. Vulnerability Findings</h2>
+    <p><strong>Total Vulnerabilities Found:</strong> {{ vulnerability_findings | length }}</p>
+
+    {% for vuln in vulnerability_findings %}
+    <div class="vulnerability">
+        <h3>{{ vuln.id }}. {{ vuln.title }}</h3>
+        <p>
+            <strong>Severity:</strong> <span class="{{ vuln.severity }}">{{ vuln.severity | upper }}</span><br>
+            <strong>Risk Rating:</strong> <span class="{{ vuln.risk_rating }}">{{ vuln.risk_rating | upper }}</span><br>
+            <strong>Risk Score:</strong> {{ vuln.risk_score }}/100<br>
+            <strong>CVSS Score:</strong> {{ vuln.cvss_score }}<br>
+            {% if vuln.cve_id %}<strong>CVE:</strong> {{ vuln.cve_id }}<br>{% endif %}
+            {% if vuln.cwe_id %}<strong>CWE:</strong> {{ vuln.cwe_id }}<br>{% endif %}
+        </p>
+
+        <h4>Description</h4>
+        <p>{{ vuln.description }}</p>
+
+        {% if vuln.affected_asset %}
+        <h4>Affected Asset</h4>
+        <p><code>{{ vuln.affected_asset }}</code></p>
+        {% endif %}
+
+        {% if vuln.affected_port %}
+        <h4>Affected Service</h4>
+        <p>Port {{ vuln.affected_port }} / {{ vuln.affected_service }}</p>
+        {% endif %}
+
+        {% if vuln.evidence %}
+        <h4>Evidence</h4>
+        <pre><code>{{ vuln.evidence }}</code></pre>
+        {% endif %}
+
+        {% if vuln.risk_factors %}
+        <h4>Risk Factors</h4>
+        <ul>
+        {% for factor_name, factor_value in vuln.risk_factors.items() %}
+            <li><strong>{{ factor_name }}:</strong> {{ factor_value }}</li>
+        {% endfor %}
+        </ul>
+        {% endif %}
+
+        <h4>Remediation</h4>
+        <p>{{ vuln.remediation }}</p>
+
+        {% if vuln.references %}
+        <h4>References</h4>
+        <ul>
+        {% for ref in vuln.references %}
+            <li><a href="{{ ref }}">{{ ref }}</a></li>
+        {% endfor %}
+        </ul>
+        {% endif %}
+    </div>
+    {% endfor %}
+
+    <h2>5. Configuration Audit</h2>
+    <ul>
+        <li><strong>Systems with Default Credentials:</strong> {{ configuration_audit.default_credentials_found }}</li>
+        <li><strong>Encrypted Services:</strong> {{ configuration_audit.services_encrypted }}</li>
+        <li><strong>Unencrypted Services:</strong> {{ configuration_audit.services_unencrypted }}</li>
+        <li><strong>CCTV Devices Inventoried:</strong> {{ configuration_audit.cctv_devices_inventoried }}</li>
+    </ul>
+
+    <h2>6. Remediation Procedures</h2>
+    {% for procedure in remediation_procedures %}
+    <h3>{{ procedure.vulnerability }}</h3>
+    <p><strong>Severity:</strong> <span class="{{ procedure.severity }}">{{ procedure.severity | upper }}</span></p>
+    <p><strong>Priority:</strong> {{ procedure.priority }}</p>
+    <p><strong>Procedure:</strong></p>
+    <pre><code>{{ procedure.procedure }}</code></pre>
+    {% endfor %}
+
+    <hr>
+    <p style="color: #666; font-size: 0.9em;">
+        <strong>CONFIDENTIAL</strong> - Technical Report for Security Authorization Level Personnel Only<br>
+        Report Generated: {{ generated_at }}
+    </p>
+</body>
+</html>

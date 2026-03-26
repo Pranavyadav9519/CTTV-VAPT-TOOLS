@@ -1,0 +1,12 @@
+replicaCount: 1
+
+image:
+  repository: vapt-backend
+  tag: latest
+  pullPolicy: IfNotPresent
+
+service:
+  type: ClusterIP
+  port: 5000
+
+resources: {}

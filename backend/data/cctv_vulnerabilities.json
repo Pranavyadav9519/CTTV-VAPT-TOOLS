@@ -1,0 +1,469 @@
+{
+  "vulnerabilities": [
+    {
+      "vuln_id": "HIK-001",
+      "cve_id": "CVE-2017-7921",
+      "title": "Hikvision Authentication Bypass",
+      "description": "Hikvision devices with firmware versions 5.4.5 and earlier contain an unspecified authentication bypass vulnerability. An attacker can bypass password verification and gain unauthorized access.",
+      "severity": "critical",
+      "cvss_score": 10.0,
+      "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H",
+      "cwe_id": ["CWE-287"],
+      "affected_vendors": ["hikvision"],
+      "affected_products": [
+        "DS-7610NI-E1/4P",
+        "DS-7620NI-E2/8P",
+        "DS-7716NI-E4/16P",
+        "DS-7732NI-E4/16P",
+        "DS-8632NI-E8"
+      ],
+      "affected_versions": ["5.4.5", "5.4.0", "5.3.0", "4.0"],
+      "fixed_version": "5.4.6",
+      "remediation": "Update firmware to version 5.4.6 or later. Contact Hikvision support for firmware updates.",
+      "detection_method": "banner_analysis",
+      "detection_logic": "Check HTTP Server header for version <= 5.4.5, check for password bypass endpoint",
+      "references": [
+        "https://nvd.nist.gov/vuln/detail/CVE-2017-7921",
+        "https://www.cvedetails.com/cve/CVE-2017-7921/",
+        "https://www.exploit-db.com/exploits/41768"
+      ],
+      "published_date": "2017-09-14"
+    },
+    {
+      "vuln_id": "HIK-002",
+      "cve_id": "CVE-2021-36260",
+      "title": "Hikvision Command Injection in Web Interface",
+      "description": "Hikvision cameras and DVRs contain a command injection vulnerability in the web interface. An attacker can execute arbitrary commands through specially crafted requests.",
+      "severity": "critical",
+      "cvss_score": 9.8,
+      "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H",
+      "cwe_id": ["CWE-78", "CWE-77"],
+      "affected_vendors": ["hikvision"],
+      "affected_products": [
+        "DS-7610NI series",
+        "DS-7620NI series",
+        "DS-7700NI series",
+        "DS-7800NI series",
+        "DS-7900NI series",
+        "DS-7610NI-E2/4P",
+        "DS-7616NI-I2/16P"
+      ],
+      "affected_versions": ["5.5.0", "5.4.0", "4.0"],
+      "fixed_version": "5.5.82",
+      "remediation": "Update to firmware version 5.5.82 or later. Apply security patches from Hikvision.",
+      "detection_method": "web_endpoint_check",
+      "detection_logic": "POST to /SDK/webLanguage endpoint, check for unauthenticated response",
+      "references": [
+        "https://nvd.nist.gov/vuln/detail/CVE-2021-36260",
+        "https://www.us-cert.gov/ncas/alerts/2021-08-18",
+        "https://www.cvedetails.com/cve/CVE-2021-36260/"
+      ],
+      "published_date": "2021-08-18"
+    },
+    {
+      "vuln_id": "HIK-003",
+      "cve_id": "CVE-2021-33044",
+      "title": "Hikvision Authentication Bypass with Weak Credentials",
+      "description": "Hikvision devices allow authentication bypass using weak or null credentials transmitted in plaintext over HTTP.",
+      "severity": "critical",
+      "cvss_score": 9.8,
+      "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H",
+      "cwe_id": ["CWE-287", "CWE-319"],
+      "affected_vendors": ["hikvision"],
+      "affected_products": ["DS-7600/7700/7800/7900 series"],
+      "affected_versions": ["5.4.0", "5.5.0", "8.0"],
+      "fixed_version": "5.5.82",
+      "remediation": "Update firmware immediately. Use HTTPS instead of HTTP. Enforce strong authentication.",
+      "detection_method": "http_auth_check",
+      "detection_logic": "Test HTTP requests with common default credentials",
+      "references": [
+        "https://nvd.nist.gov/vuln/detail/CVE-2021-33044"
+      ],
+      "published_date": "2021-06-08"
+    },
+    {
+      "vuln_id": "HIK-004",
+      "cve_id": "CVE-2022-32169",
+      "title": "Hikvision RTSP Protocol Buffer Overflow",
+      "description": "Buffer overflow vulnerability in RTSP protocol handler of Hikvision cameras. Can be exploited to cause denial of service or code execution.",
+      "severity": "high",
+      "cvss_score": 8.6,
+      "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H",
+      "cwe_id": ["CWE-120"],
+      "affected_vendors": ["hikvision"],
+      "affected_products": ["DS-2CD series IP cameras"],
+      "affected_versions": ["5.5.0", "8.0"],
+      "fixed_version": "8.1.0",
+      "remediation": "Update to firmware 8.1.0 or later. Restrict RTSP access.",
+      "detection_method": "rtsp_banner_check",
+      "detection_logic": "Check RTSP banner version, test with malformed requests",
+      "references": [
+        "https://nvd.nist.gov/vuln/detail/CVE-2022-32169"
+      ],
+      "published_date": "2022-07-05"
+    },
+    {
+      "vuln_id": "HIK-005",
+      "cve_id": "CVE-2023-37990",
+      "title": "Hikvision Directory Traversal via Web Interface",
+      "description": "Path traversal vulnerability allowing arbitrary file access through the web interface without authentication.",
+      "severity": "high",
+      "cvss_score": 7.5,
+      "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:N/A:N",
+      "cwe_id": ["CWE-22"],
+      "affected_vendors": ["hikvision"],
+      "affected_products": ["DS-7600/7700 series"],
+      "affected_versions": ["5.4.0", "5.5.0"],
+      "fixed_version": "5.5.85",
+      "remediation": "Update firmware to 5.5.85 or later. Restrict web interface access.",
+      "detection_method": "web_path_traversal",
+      "detection_logic": "Test endpoints like /cgi-bin/../../../../etc/passwd",
+      "references": [
+        "https://nvd.nist.gov/vuln/detail/CVE-2023-37990"
+      ],
+      "published_date": "2023-10-24"
+    },
+    {
+      "vuln_id": "DH-001",
+      "cve_id": "CVE-2021-33044",
+      "title": "Dahua Authentication Bypass",
+      "description": "Dahua DVR/NVR devices contain authentication bypass allowing unauthorized access with default or weak credentials.",
+      "severity": "critical",
+      "cvss_score": 9.8,
+      "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H",
+      "cwe_id": ["CWE-287"],
+      "affected_vendors": ["dahua"],
+      "affected_products": [
+        "DHI-NVR1104HS-P",
+        "DHI-NVR2104HS-P",
+        "DHI-NVR4104HS-P",
+        "DHI-HCVR5104A",
+        "DHI-HCVR5108A"
+      ],
+      "affected_versions": ["2.0.0", "3.0.0"],
+      "fixed_version": "3.1.1",
+      "remediation": "Update to firmware 3.1.1 or later. Change default credentials immediately.",
+      "detection_method": "http_auth_check",
+      "detection_logic": "Test with default Dahua credentials (admin/admin, admin/aaaaaa)",
+      "references": [
+        "https://nvd.nist.gov/vuln/detail/CVE-2021-33044",
+        "https://www.cvedetails.com/cve/CVE-2021-33044/"
+      ],
+      "published_date": "2021-06-08"
+    },
+    {
+      "vuln_id": "DH-002",
+      "cve_id": "CVE-2019-13401",
+      "title": "Dahua Command Injection in CGI Scripts",
+      "description": "Multiple CGI scripts in Dahua devices are vulnerable to command injection allowing remote code execution.",
+      "severity": "critical",
+      "cvss_score": 9.8,
+      "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H",
+      "cwe_id": ["CWE-78"],
+      "affected_vendors": ["dahua"],
+      "affected_products": ["DVRs and NVRs"],
+      "affected_versions": ["2.0.0", "3.0.0", "3.0.1"],
+      "fixed_version": "3.1.0",
+      "remediation": "Update firmware to 3.1.0+. Restrict CGI access.",
+      "detection_method": "cgi_endpoint_check",
+      "detection_logic": "Test /cgi-bin/configManager.cgi vulnerable endpoints",
+      "references": [
+        "https://nvd.nist.gov/vuln/detail/CVE-2019-13401"
+      ],
+      "published_date": "2019-07-10"
+    },
+    {
+      "vuln_id": "DH-003",
+      "cve_id": "CVE-2019-16243",
+      "title": "Dahua Arbitrary File Upload",
+      "description": "File upload vulnerability allowing unauthenticated upload of arbitrary files to the device.",
+      "severity": "critical",
+      "cvss_score": 9.3,
+      "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:H/A:H",
+      "cwe_id": ["CWE-434"],
+      "affected_vendors": ["dahua"],
+      "affected_products": ["DVR/NVR devices"],
+      "affected_versions": ["2.0", "3.0"],
+      "fixed_version": "3.2.0",
+      "remediation": "Update to latest firmware. Implement upload restrictions.",
+      "detection_method": "file_upload_check",
+      "detection_logic": "Test file upload endpoints without authentication",
+      "references": [
+        "https://nvd.nist.gov/vuln/detail/CVE-2019-16243"
+      ],
+      "published_date": "2019-09-11"
+    },
+    {
+      "vuln_id": "DH-004",
+      "cve_id": "CVE-2020-6910",
+      "title": "Dahua Information Disclosure",
+      "description": "Information disclosure vulnerability exposing sensitive system information without authentication.",
+      "severity": "high",
+      "cvss_score": 7.5,
+      "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:N/A:N",
+      "cwe_id": ["CWE-200"],
+      "affected_vendors": ["dahua"],
+      "affected_products": ["DVR/NVR models"],
+      "affected_versions": ["2.0", "3.0"],
+      "fixed_version": "3.1.0",
+      "remediation": "Update firmware. Restrict system information disclosure.",
+      "detection_method": "info_endpoint_check",
+      "detection_logic": "Check /etc/board.conf for exposure",
+      "references": [
+        "https://nvd.nist.gov/vuln/detail/CVE-2020-6910"
+      ],
+      "published_date": "2020-03-31"
+    },
+    {
+      "vuln_id": "AXIS-001",
+      "cve_id": "CVE-2018-7985",
+      "title": "Axis Communications Information Disclosure",
+      "description": "Axis cameras expose version and system information through HTTP headers.",
+      "severity": "medium",
+      "cvss_score": 5.3,
+      "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:L/I:N/A:N",
+      "cwe_id": ["CWE-200"],
+      "affected_vendors": ["axis"],
+      "affected_products": ["Multiple Axis camera models"],
+      "affected_versions": ["All current"],
+      "fixed_version": "N/A - Design issue",
+      "remediation": "Configure web server to hide version headers. Use firewall to restrict access.",
+      "detection_method": "header_analysis",
+      "detection_logic": "Check HTTP Server headers for version disclosure",
+      "references": [
+        "https://nvd.nist.gov/vuln/detail/CVE-2018-7985"
+      ],
+      "published_date": "2018-03-19"
+    },
+    {
+      "vuln_id": "AXIS-002",
+      "cve_id": "CVE-2023-46805",
+      "title": "Axis Authentication Bypass in Web Management",
+      "description": "Session handling issue allowing authentication bypass in web management interface.",
+      "severity": "high",
+      "cvss_score": 8.1,
+      "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:N",
+      "cwe_id": ["CWE-287"],
+      "affected_vendors": ["axis"],
+      "affected_products": ["Axis network cameras and video encoders"],
+      "affected_versions": ["8.40.1", "9.10.1", "10.0.1", "10.1.1"],
+      "fixed_version": "10.2.0",
+      "remediation": "Update to firmware version 10.2.0 or later.",
+      "detection_method": "session_check",
+      "detection_logic": "Test session management weaknesses",
+      "references": [
+        "https://nvd.nist.gov/vuln/detail/CVE-2023-46805"
+      ],
+      "published_date": "2023-11-14"
+    },
+    {
+      "vuln_id": "UNIVIEW-001",
+      "cve_id": "CVE-2021-25367",
+      "title": "Uniview IPC Default Credentials",
+      "description": "Uniview IP cameras contain hardcoded default credentials allowing unauthorized access.",
+      "severity": "critical",
+      "cvss_score": 9.8,
+      "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H",
+      "cwe_id": ["CWE-798"],
+      "affected_vendors": ["uniview"],
+      "affected_products": ["IPC series cameras"],
+      "affected_versions": ["All"],
+      "fixed_version": "Contact vendor",
+      "remediation": "Change default credentials. Use network segmentation.",
+      "detection_method": "credential_check",
+      "detection_logic": "Test Uniview default credentials",
+      "references": [
+        "https://nvd.nist.gov/vuln/detail/CVE-2021-25367"
+      ],
+      "published_date": "2021-03-15"
+    },
+    {
+      "vuln_id": "GENERIC-TELNET",
+      "cve_id": "CWE-319",
+      "title": "Telnet Service Enabled on CCTV Device",
+      "description": "Telnet is an unencrypted remote access protocol that transmits credentials in plaintext. Using Telnet on CCTV devices is a critical security risk.",
+      "severity": "high",
+      "cvss_score": 7.2,
+      "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:N/A:N",
+      "cwe_id": ["CWE-319"],
+      "affected_vendors": ["all"],
+      "affected_products": ["Any CCTV device"],
+      "detection_method": "port_check",
+      "detection_logic": "Check if port 23 (Telnet) is open",
+      "remediation": "Disable Telnet service immediately. Use SSH for secure remote access.",
+      "references": [
+        "https://tools.ietf.org/html/rfc854"
+      ]
+    },
+    {
+      "vuln_id": "GENERIC-RTSP-NOAUTH",
+      "cve_id": "CWE-287",
+      "title": "RTSP Stream Accessible Without Authentication",
+      "description": "RTSP (Real Time Streaming Protocol) video stream is accessible without requiring authentication. Attackers can view live video streams.",
+      "severity": "high",
+      "cvss_score": 7.5,
+      "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:N/A:N",
+      "cwe_id": ["CWE-287"],
+      "affected_vendors": ["all"],
+      "affected_products": ["Any CCTV device with RTSP"],
+      "detection_method": "rtsp_auth_check",
+      "detection_logic": "Send RTSP DESCRIBE without credentials and check for 200 response",
+      "remediation": "Enable RTSP authentication. Use RTSPS (encrypted RTSP) if available.",
+      "references": [
+        "https://tools.ietf.org/html/rfc7826"
+      ]
+    },
+    {
+      "vuln_id": "GENERIC-FTP-ANON",
+      "cve_id": "CWE-284",
+      "title": "Anonymous FTP Access Enabled",
+      "description": "FTP service allows anonymous access without authentication, permitting unauthorized file transfer.",
+      "severity": "high",
+      "cvss_score": 7.5,
+      "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:N/A:N",
+      "cwe_id": ["CWE-284"],
+      "affected_vendors": ["all"],
+      "affected_products": ["Any CCTV device with FTP"],
+      "detection_method": "ftp_anon_check",
+      "detection_logic": "Connect to FTP and attempt anonymous login",
+      "remediation": "Disable FTP anonymous access. Use SFTP instead.",
+      "references": []
+    },
+    {
+      "vuln_id": "GENERIC-HTTP-NOSSL",
+      "cve_id": "CWE-319",
+      "title": "HTTP Without HTTPS - Credentials Transmitted in Plaintext",
+      "description": "Web interface is accessible over unencrypted HTTP allowing credential interception and man-in-the-middle attacks.",
+      "severity": "medium",
+      "cvss_score": 5.3,
+      "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:L/I:N/A:N",
+      "cwe_id": ["CWE-319"],
+      "affected_vendors": ["all"],
+      "affected_products": ["Any CCTV device"],
+      "detection_method": "port_check",
+      "detection_logic": "Check if port 80 is open and 443 is closed",
+      "remediation": "Enable HTTPS. Configure HTTP to automatically redirect to HTTPS.",
+      "references": []
+    },
+    {
+      "vuln_id": "GENERIC-UPNP",
+      "cve_id": "CWE-284",
+      "title": "UPnP Service Enabled",
+      "description": "UPnP (Universal Plug and Play) is enabled allowing automatic network traversal which may expose device to the internet.",
+      "severity": "medium",
+      "cvss_score": 5.3,
+      "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:L/I:L/A:N",
+      "cwe_id": ["CWE-284"],
+      "affected_vendors": ["all"],
+      "affected_products": ["Any CCTV device"],
+      "detection_method": "port_check",
+      "detection_logic": "Check if UPnP ports (5000, 1900) are open",
+      "remediation": "Disable UPnP if not required. Use firewall to block UPnP ports.",
+      "references": []
+    },
+    {
+      "vuln_id": "GENERIC-ONVIF-NOAUTH",
+      "cve_id": "CWE-287",
+      "title": "ONVIF Service Accessible Without Authentication",
+      "description": "ONVIF web service is accessible without authentication allowing device enumeration and potential exploitation.",
+      "severity": "high",
+      "cvss_score": 7.5,
+      "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:N/A:N",
+      "cwe_id": ["CWE-287"],
+      "affected_vendors": ["all"],
+      "affected_products": ["Any ONVIF-compliant camera"],
+      "detection_method": "onvif_check",
+      "detection_logic": "Send ONVIF GetDeviceInformation and check for manufacturer info",
+      "remediation": "Configure ONVIF to require authentication. Restrict ONVIF access to trusted networks.",
+      "references": [
+        "https://www.onvif.org/"
+      ]
+    },
+    {
+      "vuln_id": "GENERIC-SSH-WEAK",
+      "cve_id": "CWE-326",
+      "title": "SSH Using Weak Cryptography",
+      "description": "SSH service is using weak encryption algorithms or protocols (SSHv1, weak ciphers) vulnerable to attacks.",
+      "severity": "high",
+      "cvss_score": 7.5,
+      "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:N/A:N",
+      "cwe_id": ["CWE-326"],
+      "affected_vendors": ["all"],
+      "affected_products": ["Any CCTV with SSH"],
+      "detection_method": "ssh_banner_check",
+      "detection_logic": "Check SSH version for weak protocols",
+      "remediation": "Update SSH server to latest version. Use only strong ciphers (AES-256, etc).",
+      "references": [
+        "https://tools.ietf.org/html/rfc4251"
+      ]
+    },
+    {
+      "vuln_id": "GENERIC-SSL-WEAK",
+      "cve_id": "CWE-326",
+      "title": "Weak SSL/TLS Configuration",
+      "description": "HTTPS is using outdated or weak SSL/TLS protocols (SSLv3, TLS 1.0) or weak cipher suites vulnerable to attacks.",
+      "severity": "high",
+      "cvss_score": 7.5,
+      "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:N/A:N",
+      "cwe_id": ["CWE-326"],
+      "affected_vendors": ["all"],
+      "affected_products": ["Any CCTV with HTTPS"],
+      "detection_method": "ssl_cert_check",
+      "detection_logic": "Analyze SSL certificate and supported protocols",
+      "remediation": "Update TLS to 1.2+. Use only strong cipher suites. Disable SSLv3 and TLS 1.0.",
+      "references": [
+        "https://tools.ietf.org/html/rfc8446"
+      ]
+    },
+    {
+      "vuln_id": "GENERIC-CERT-EXPIRED",
+      "cve_id": "N/A",
+      "title": "Expired HTTPS Certificate",
+      "description": "HTTPS certificate has expired causing certificate validation warnings and potential man-in-the-middle vulnerabilities.",
+      "severity": "medium",
+      "cvss_score": 5.3,
+      "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:L/I:L/A:N",
+      "cwe_id": ["CWE-295"],
+      "affected_vendors": ["all"],
+      "affected_products": ["Any CCTV with HTTPS"],
+      "detection_method": "cert_expiry_check",
+      "detection_logic": "Check certificate expiration date",
+      "remediation": "Renew the HTTPS certificate immediately.",
+      "references": []
+    },
+    {
+      "vuln_id": "GENERIC-CERT-SELFSIGNED",
+      "cve_id": "N/A",
+      "title": "Self-Signed HTTPS Certificate (Warning Only)",
+      "description": "HTTPS certificate is self-signed not issued by a trusted CA. While not a vulnerability, it indicates the need for proper certificate management.",
+      "severity": "low",
+      "cvss_score": 3.7,
+      "cvss_vector": "CVSS:3.1/AV:N/AC:H/PR:N/UI:R/S:U/C:L/I:L/A:N",
+      "cwe_id": [],
+      "affected_vendors": ["all"],
+      "affected_products": ["Any CCTV with HTTPS"],
+      "detection_method": "cert_issuer_check",
+      "detection_logic": "Check if certificate issuer matches a trusted CA",
+      "remediation": "Install a proper certificate from a trusted Certificate Authority.",
+      "references": []
+    },
+    {
+      "vuln_id": "GENERIC-HEADERS-MISSING",
+      "cve_id": "CWE-200",
+      "title": "Missing HTTP Security Headers",
+      "description": "The web interface is missing critical security headers (HSTS, X-Frame-Options, X-Content-Type-Options) making it vulnerable to attacks.",
+      "severity": "medium",
+      "cvss_score": 5.3,
+      "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:L/I:L/A:N",
+      "cwe_id": ["CWE-200"],
+      "affected_vendors": ["all"],
+      "affected_products": ["Any CCTV with web interface"],
+      "detection_method": "header_analysis",
+      "detection_logic": "Check for presence of HSTS, X-Frame-Options, etc",
+      "remediation": "Configure web server to send proper security headers.",
+      "references": [
+        "https://owasp.org/www-project-secure-headers/"
+      ]
+    }
+  ]
+}

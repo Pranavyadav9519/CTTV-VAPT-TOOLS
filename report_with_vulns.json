@@ -1,0 +1,18 @@
+{
+  "scan_info": {
+    "scan_id": "sample-scan-001",
+    "operator": "test_operator",
+    "network_range": "192.168.1.0/24",
+    "status": "completed",
+    "started_at": "2026-01-30T10:33:52.136434",
+    "completed_at": "2026-01-30T10:33:52.136777"
+  },
+  "summary": {
+    "total_devices": 0,
+    "cctv_devices": 0,
+    "total_ports": 0,
+    "total_vulnerabilities": 0
+  },
+  "devices": [],
+  "vulnerabilities": []
+}

@@ -1,0 +1,18 @@
+FROM python:3.10-slim
+WORKDIR /app
+COPY requirements.txt /app/
+RUN pip install --no-cache-dir -r requirements.txt
+COPY . .
+
+# Production environment variables
+ENV C_FORCE_ROOT=1
+ENV PYTHONUNBUFFERED=1
+ENV CELERY_BROKER_URL=redis://redis:6379/0
+ENV CELERY_RESULT_BACKEND=redis://redis:6379/0
+ENV VAPT_PRODUCTION=1
+ENV S3_BUCKET=vapt-prod
+ENV AUDIT_LOG_KEY=changeme
+ENV ENCRYPTION_KEY=changeme
+
+# Strict error handling and logging
+CMD ["celery", "-A", "app.celery_app", "worker", "--loglevel=info", "--without-gossip", "--without-mingle", "--without-heartbeat", "--pool=solo"]

@@ -1,0 +1,566 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CCTV VAPT Tool - Vulnerability Assessment & Penetration Testing</title>
+    <link rel="stylesheet" href="css/modern-styles.css">
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="css/report-styles.css">
+    <link rel="stylesheet" href="css/enhanced-ui-styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <!-- Header Navigation -->
+    <header class="navbar">
+        <div class="navbar-container">
+            <!-- Logo -->
+            <div class="logo">
+                <i class="fas fa-shield-halved"></i>
+                <span>CCTV VAPT</span>
+            </div>
+
+            <!-- Navigation Menu -->
+            <nav class="nav-menu">
+                <a href="#" class="nav-item active">
+                    <i class="fas fa-radar"></i>
+                    <span>New Scan</span>
+                </a>
+                <a href="#" class="nav-item">
+                    <i class="fas fa-history"></i>
+                    <span>Scan History</span>
+                </a>
+                <a href="#" class="nav-item">
+                    <i class="fas fa-file-pdf"></i>
+                    <span>Reports</span>
+                </a>
+                <a href="#" class="nav-item">
+                    <i class="fas fa-chart-line"></i>
+                    <span>Analytics</span>
+                </a>
+                <a href="#" class="nav-item">
+                    <i class="fas fa-cog"></i>
+                    <span>Settings</span>
+                </a>
+            </nav>
+
+            <!-- User Section -->
+            <div class="user-section">
+                <button class="icon-btn" title="Notifications">
+                    <i class="fas fa-bell"></i>
+                </button>
+                <div class="user-avatar">
+                    <i class="fas fa-user"></i>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content Container with Views -->
+    <div class="views-container">
+        <!-- New Scan View (Default) -->
+        <div id="view-new-scan" class="view-page active">
+            <!-- Hero Section -->
+            <section class="hero">
+                <div class="hero-content">
+            <!-- Left Side: Headline and Description -->
+            <div class="hero-left">
+                <h1 class="hero-title">CCTV Vulnerability Assessment Tool</h1>
+                <p class="hero-subtitle">Non-destructive security scanning for IP cameras, DVRs, and NVR systems</p>
+
+                <div class="hero-description">
+                    <p>
+                        Comprehensive vulnerability detection for CCTV infrastructure. Our assessment engine identifies:
+                    </p>
+                    <ul class="feature-list">
+                        <li>
+                            <i class="fas fa-check-circle"></i>
+                            <span>Exposed ports and open services</span>
+                        </li>
+                        <li>
+                            <i class="fas fa-check-circle"></i>
+                            <span>Weak configurations and default credentials</span>
+                        </li>
+                        <li>
+                            <i class="fas fa-check-circle"></i>
+                            <span>Insecure protocols and deprecated services</span>
+                        </li>
+                        <li>
+                            <i class="fas fa-check-circle"></i>
+                            <span>Known CVEs and security advisories</span>
+                        </li>
+                        <li>
+                            <i class="fas fa-check-circle"></i>
+                            <span>Authentication bypass opportunities</span>
+                        </li>
+                    </ul>
+                </div>
+
+                <div class="hero-stats">
+                    <div class="stat-card">
+                        <span class="stat-number">150+</span>
+                        <span class="stat-label">Vulnerability Checks</span>
+                    </div>
+                    <div class="stat-card">
+                        <span class="stat-number">5min</span>
+                        <span class="stat-label">Average Scan Time</span>
+                    </div>
+                    <div class="stat-card">
+                        <span class="stat-number">99.8%</span>
+                        <span class="stat-label">Accuracy Rate</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Side: Scan Configuration Card -->
+            <div class="hero-right">
+                <div class="scan-card">
+                    <!-- Scan Type Tabs -->
+                    <div class="scan-tabs">
+                        <button class="tab-btn active" data-tab="passive">
+                            <i class="fas fa-eye"></i>
+                            Passive Scan
+                        </button>
+                        <button class="tab-btn" data-tab="active">
+                            <i class="fas fa-radar"></i>
+                            Active Scan
+                        </button>
+                        <button class="tab-btn" data-tab="advanced">
+                            <i class="fas fa-sliders-h"></i>
+                            Advanced / Authorized
+                        </button>
+                    </div>
+
+                    <!-- Tab Content -->
+                    <div class="tab-content">
+                        <!-- Passive Scan Tab -->
+                        <div class="tab-pane active" data-tab="passive">
+                            <h3 class="tab-title">Passive Reconnaissance</h3>
+                            <p class="tab-description">
+                                Non-intrusive network analysis. Discovers devices and services without sending dangerous probes.
+                            </p>
+                        </div>
+
+                        <!-- Active Scan Tab -->
+                        <div class="tab-pane" data-tab="active">
+                            <h3 class="tab-title">Active Network Scan</h3>
+                            <p class="tab-description">
+                                Full vulnerability assessment with detailed port scanning and service detection. Network traffic may be noticeable.
+                            </p>
+                        </div>
+
+                        <!-- Advanced Scan Tab -->
+                        <div class="tab-pane" data-tab="advanced">
+                            <h3 class="tab-title">Advanced / Authorized Scan</h3>
+                            <p class="tab-description">
+                                Comprehensive penetration testing with credential-based authentication checks. Requires explicit authorization.
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Input Fields -->
+                    <div class="form-section" id="manual-target-container" style="display: none;">
+                        <label for="target-input" class="form-label">Target IP / IP Range / Subnet</label>
+                        <input
+                            type="text"
+                            id="target-input"
+                            class="form-input"
+                            placeholder=""
+                            value=""
+                            aria-hidden="true"
+                        >
+                    </div>
+
+                    <!-- Dynamic Parsing Panel (hidden until input is valid) -->
+                    <div id="parse-panel" class="card" style="display: none; margin-top: 1rem;" aria-hidden="true">
+                        <div class="card-body">
+                            <h4 class="card-header">Parsed Target</h4>
+                            <div class="form-group">
+                                <label class="form-label">Detected Type</label>
+                                <div id="detected-type" class="info-box-content"></div>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Normalized Target</label>
+                                <div id="normalized-target" class="info-box-content"></div>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Host Count</label>
+                                <div id="host-count" class="info-box-content"></div>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Estimated Scan Scope</label>
+                                <div id="estimated-scan-scope" class="info-box-content"></div>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Estimated Duration</label>
+                                <div id="estimated-duration" class="info-box-content"></div>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Recommended Scan Mode</label>
+                                <div id="recommended-scan-mode" class="info-box-content"></div>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Network Safety</label>
+                                <div id="safety-warning" class="alert alert-error" style="display:none"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Discovery Results (populated from backend) -->
+                    <div id="discovery-results" class="card" style="display:none; margin-top:1rem;">
+                        <div class="card-body">
+                            <h4 class="card-header">Discovery Results</h4>
+                            <div id="results-container" class="form-group">
+                                <!-- populated by JS -->
+                            </div>
+                            <div id="results-empty" style="display:none;" class="info-box">
+                                <p>No CCTV devices detected in the current network.</p>
+                                <ul>
+                                    <li>Ensure devices are powered on</li>
+                                    <li>Ensure you are on the same local network</li>
+                                    <li>Try manual scan in Advanced Options (enable manual input)</li>
+                                </ul>
+                            </div>
+                            <div id="results-error" style="display:none;" class="alert alert-error"></div>
+                        </div>
+                    </div>
+
+                    <!-- Advanced Options (Collapsible) -->
+                    <div class="advanced-options">
+                        <button class="options-toggle">
+                            <i class="fas fa-chevron-down"></i>
+                            <span>Advanced Options</span>
+                        </button>
+                        <div class="options-content" style="display: none;">
+                            <div class="option-group">
+                                <label class="checkbox-label">
+                                    <input type="checkbox" id="ssl-check">
+                                    <span>SSL/TLS Certificate Validation</span>
+                                </label>
+                            </div>
+                            <div class="option-group">
+                                <label class="checkbox-label">
+                                    <input type="checkbox" id="banner-grab" checked>
+                                    <span>Banner Grabbing</span>
+                                </label>
+                            </div>
+                            <div class="option-group">
+                                <label class="checkbox-label">
+                                    <input type="checkbox" id="allow-manual-target">
+                                    <span>Allow manual target input</span>
+                                </label>
+                                <p class="info-box-content" style="margin-top:0.5rem;">Enable only when you will provide a verified IP, range, or subnet. Manual input is disabled by default.</p>
+                            </div>
+                            <div class="option-group">
+                                <label class="checkbox-label">
+                                    <input type="checkbox" id="cve-check" checked>
+                                    <span>CVE Database Matching</span>
+                                </label>
+                            </div>
+                            <div class="option-group">
+                                <label class="form-label">Scan Intensity</label>
+                                <select class="form-select">
+                                    <option value="light">Light (Faster)</option>
+                                    <option value="normal" selected>Normal (Balanced)</option>
+                                    <option value="thorough">Thorough (Slower)</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Primary CTA Button -->
+                    <button class="btn-primary btn-scan">
+                        <i class="fas fa-play-circle"></i>
+                        <span>Start CCTV Scan</span>
+                    </button>
+
+                    <!-- Secondary Info -->
+                    <div class="scan-info">
+                        <p class="scan-info-text">
+                            <strong>Passive Scan</strong> will analyze your network without sending disruptive traffic. Safe for production environments.
+                        </p>
+                        <a href="#" class="scan-details-link">
+                            <i class="fas fa-arrow-right"></i>
+                            <span>View scan details</span>
+                        </a>
+                    </div>
+
+                    <!-- Disclaimer -->
+                    <div class="scan-disclaimer">
+                        <i class="fas fa-info-circle"></i>
+                        <p>Ensure you have proper authorization before scanning any network or device.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+            <!-- Recent Scans Section -->
+            <section class="recent-scans">
+                <div class="section-container">
+                    <h2 class="section-title">Recent Scans</h2>
+
+                    <div class="scans-grid">
+                        <div class="info-box">
+                            <p>No recent scans recorded.</p>
+                            <p>Run a scan to populate recent scan results.</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <!-- Scan History View -->
+        <div id="view-scan-history" class="view-page">
+            <div class="view-header">
+                <h1 class="view-title">Scan History</h1>
+                <p class="view-subtitle">All completed and running scans</p>
+            </div>
+
+            <div class="view-content">
+                <div class="filter-section">
+                    <div class="filter-group">
+                        <label>SEVERITY:</label>
+                        <button class="filter-btn active">All</button>
+                        <button class="filter-btn">Critical</button>
+                        <button class="filter-btn">High</button>
+                        <button class="filter-btn">Medium</button>
+                    </div>
+
+                    <div class="filter-group">
+                        <label>STATUS:</label>
+                        <button class="filter-btn active">All</button>
+                        <button class="filter-btn">Completed</button>
+                        <button class="filter-btn">Running</button>
+                        <button class="filter-btn">Failed</button>
+                    </div>
+
+                    <div class="filter-group">
+                        <label>SORT BY:</label>
+                        <select class="form-select">
+                            <option>Vulnerabilities</option>
+                            <option>Date</option>
+                            <option>Status</option>
+                        </select>
+                    </div>
+
+                    <div class="filter-group">
+                        <label>SEARCH:</label>
+                        <input type="text" class="form-input" placeholder="Search by range or name..." id="search-scans">
+                    </div>
+                </div>
+
+                <div id="scans-table-container" class="scans-table-container">
+                    <div class="info-box">No recent scans recorded. Run a scan to populate recent scan results.</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Reports View -->
+        <div id="view-reports" class="view-page">
+            <div class="view-header">
+                <h1 class="view-title">Reports</h1>
+                <p class="view-subtitle">Generated VAPT reports and assessments</p>
+            </div>
+
+            <div class="view-content">
+                <div class="filter-section">
+                    <div class="filter-group">
+                        <label>TYPE:</label>
+                        <button class="filter-btn active">All</button>
+                        <button class="filter-btn">Executive Summary</button>
+                        <button class="filter-btn">Technical</button>
+                        <button class="filter-btn">Compliance</button>
+                    </div>
+
+                    <div class="filter-group">
+                        <label>SORT BY:</label>
+                        <select class="form-select">
+                            <option>Date (Newest)</option>
+                            <option>Date (Oldest)</option>
+                            <option>Type</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div id="reports-table-container" class="reports-table-container">
+                    <div class="info-box">No reports generated yet. Complete a scan to generate reports.</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Analytics View -->
+        <div id="view-analytics" class="view-page">
+            <div class="view-header">
+                <h1 class="view-title">Analytics</h1>
+                <p class="view-subtitle">Vulnerability trends and statistics</p>
+            </div>
+
+            <div class="view-content">
+                <div id="analytics-container" class="analytics-grid">
+                    <div class="stat-grid">
+                        <div class="analytics-card">
+                            <div class="analytics-stat-label">Total Scans</div>
+                            <div class="analytics-stat-value" id="stat-total-scans">-</div>
+                        </div>
+                        <div class="analytics-card">
+                            <div class="analytics-stat-label">Completed Scans</div>
+                            <div class="analytics-stat-value" id="stat-completed-scans">-</div>
+                        </div>
+                        <div class="analytics-card">
+                            <div class="analytics-stat-label">CCTV Devices Found</div>
+                            <div class="analytics-stat-value" id="stat-cctv-devices">-</div>
+                        </div>
+                        <div class="analytics-card">
+                            <div class="analytics-stat-label">Total Vulnerabilities</div>
+                            <div class="analytics-stat-value" id="stat-total-vulns">-</div>
+                        </div>
+                        <div class="analytics-card critical">
+                            <div class="analytics-stat-label">Critical Issues</div>
+                            <div class="analytics-stat-value" id="stat-critical-vulns">-</div>
+                        </div>
+                        <div class="analytics-card high">
+                            <div class="analytics-stat-label">High Priority</div>
+                            <div class="analytics-stat-value" id="stat-high-vulns">-</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Settings View -->
+        <div id="view-settings" class="view-page">
+            <div class="view-header">
+                <h1 class="view-title">Settings</h1>
+                <p class="view-subtitle">Configure application preferences</p>
+            </div>
+
+            <div class="view-content">
+                <div id="settings-container" class="settings-grid">
+                    <div class="settings-section">
+                        <h3 class="settings-title">Scan Configuration</h3>
+                        <div class="settings-items">
+                            <div class="setting-item">
+                                <label class="setting-label">Default Scan Intensity</label>
+                                <select class="form-select">
+                                    <option>Light</option>
+                                    <option selected>Normal</option>
+                                    <option>Thorough</option>
+                                </select>
+                            </div>
+                            <div class="setting-item">
+                                <label class="setting-label">Default Target Type</label>
+                                <select class="form-select">
+                                    <option>Passive Scan</option>
+                                    <option selected>Active Scan</option>
+                                    <option>Advanced (Authorized)</option>
+                                </select>
+                            </div>
+                            <div class="setting-item">
+                                <label class="checkbox-label">
+                                    <input type="checkbox" checked>
+                                    <span>Enable CVE Database Matching</span>
+                                </label>
+                            </div>
+                            <div class="setting-item">
+                                <label class="checkbox-label">
+                                    <input type="checkbox" checked>
+                                    <span>Enable Banner Grabbing</span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="settings-section">
+                        <h3 class="settings-title">Notification Preferences</h3>
+                        <div class="settings-items">
+                            <div class="setting-item">
+                                <label class="checkbox-label">
+                                    <input type="checkbox" checked>
+                                    <span>Email notifications on scan completion</span>
+                                </label>
+                            </div>
+                            <div class="setting-item">
+                                <label class="checkbox-label">
+                                    <input type="checkbox" checked>
+                                    <span>Alert on critical vulnerabilities</span>
+                                </label>
+                            </div>
+                            <div class="setting-item">
+                                <label class="checkbox-label">
+                                    <input type="checkbox">
+                                    <span>Daily digest reports</span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="settings-section">
+                        <h3 class="settings-title">Report Generation</h3>
+                        <div class="settings-items">
+                            <div class="setting-item">
+                                <label class="setting-label">Auto-generate reports for</label>
+                                <select class="form-select">
+                                    <option>All scans</option>
+                                    <option selected>Only completed scans</option>
+                                    <option>Manual only</option>
+                                </select>
+                            </div>
+                            <div class="setting-item">
+                                <label class="setting-label">Default Report Format</label>
+                                <select class="form-select">
+                                    <option>PDF</option>
+                                    <option>HTML</option>
+                                    <option>JSON</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="settings-section">
+                        <h3 class="settings-title">System Information</h3>
+                        <div class="settings-items info-display">
+                            <div class="setting-item">
+                                <label class="setting-label">Application Version</label>
+                                <div class="info-display-value">1.0.0</div>
+                            </div>
+                            <div class="setting-item">
+                                <label class="setting-label">Database Status</label>
+                                <div class="info-display-value success">Connected</div>
+                            </div>
+                            <div class="setting-item">
+                                <label class="setting-label">Last System Check</label>
+                                <div class="info-display-value" id="last-system-check">Just now</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="settings-actions">
+                        <button class="btn-primary">Save Settings</button>
+                        <button class="btn-secondary">Reset to Defaults</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="footer-content">
+            <p>&copy; 2026 CCTV VAPT Platform. All rights reserved.</p>
+            <div class="footer-links">
+                <a href="#">Documentation</a>
+                <a href="#">Privacy Policy</a>
+                <a href="#">Terms of Service</a>
+                <a href="#">Support</a>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Scripts -->
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+    <script src="js/app.js"></script>
+    <script src="js/report-ui.js"></script>
+    <script src="js/enhanced-ui.js"></script>
+</body>
+</html>

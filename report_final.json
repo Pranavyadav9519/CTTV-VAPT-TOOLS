@@ -1,0 +1,48 @@
+{
+  "scan_info": {
+    "scan_id": "sample-scan-001",
+    "operator": "test_operator",
+    "network_range": "192.168.1.0/24",
+    "status": "completed",
+    "started_at": "2026-01-30T10:33:52.136434",
+    "completed_at": "2026-01-30T10:33:52.136777"
+  },
+  "summary": {
+    "total_devices": 2,
+    "cctv_devices": 1,
+    "total_ports": 1,
+    "total_vulnerabilities": 1
+  },
+  "devices": [
+    {
+      "ip_address": "192.168.1.10",
+      "mac_address": "00:1E:C0:AA:BB:01",
+      "is_cctv": true,
+      "device_type": "camera",
+      "ports": [
+        {
+          "port_number": 80,
+          "service_name": "http",
+          "service_version": "Hikvision-WebUI/1.0",
+          "state": "open"
+        }
+      ]
+    },
+    {
+      "ip_address": "192.168.1.20",
+      "mac_address": "AA:BB:CC:DD:EE:02",
+      "is_cctv": false,
+      "device_type": "printer",
+      "ports": []
+    }
+  ],
+  "vulnerabilities": [
+    {
+      "cve_id": null,
+      "title": "Default credentials present",
+      "severity": "high",
+      "description": "Device accepts default admin:admin credentials (read-only check).",
+      "remediation": "Change default credentials and disable remote management."
+    }
+  ]
+}

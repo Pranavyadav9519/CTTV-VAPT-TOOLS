@@ -1,0 +1,22 @@
+postgresql:
+  enabled: true
+  image:
+    repository: postgres
+    tag: 15
+  postgresqlUsername: vapt
+  postgresqlPassword: vapt
+  postgresqlDatabase: vapt
+
+redis:
+  enabled: true
+  image:
+    repository: redis
+    tag: 7
+
+backend:
+  image:
+    repository: vapt-backend
+    tag: latest
+  env:
+    DATABASE_URL: postgresql://vapt:vapt@{{ include "vapt.postgresql.fullname" . }}-postgresql:5432/vapt
+    REDIS_URL: redis://{{ include "vapt.redis.fullname" . }}-redis-master:6379/0

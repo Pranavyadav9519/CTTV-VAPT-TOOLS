@@ -1,0 +1,201 @@
+{
+  "scan_id": 999,
+  "generated_at": "2026-02-25T14:44:48.077845",
+  "reports": {
+    "executive_summary": {
+      "title": "CCTV VAPT Assessment - Executive Summary",
+      "type": "executive",
+      "sections": [
+        {
+          "heading": "Assessment Overview",
+          "content": "\nScope: 192.168.1.0/24\nDuration: 0s\nOperator: Test Operator\nGenerated: 2026-02-25T14:44:48.077746\n                    "
+        },
+        {
+          "heading": "Risk Summary",
+          "content": "\nOverall Risk Level: Medium\nTotal Vulnerabilities: 15\nCritical Issues: 2\nHigh Issues: 4\n                    "
+        },
+        {
+          "heading": "Key Findings",
+          "items": [
+            "2 critical vulnerabilities detected",
+            "4 high-severity issues identified"
+          ],
+          "content": "Critical vulnerabilities identified that require immediate attention"
+        },
+        {
+          "heading": "Recommendations",
+          "items": [
+            "Address 1 critical vulnerabilities immediately"
+          ],
+          "content": "Action items grouped by priority"
+        },
+        {
+          "heading": "Assets Assessed",
+          "content": "\nTotal Hosts Scanned: 10\nCCTV Devices Found: 3\nDevices with Vulnerabilities: 1\n                    "
+        }
+      ]
+    },
+    "technical_report": {
+      "title": "CCTV VAPT Assessment - Technical Report",
+      "type": "technical",
+      "sections": [
+        {
+          "heading": "Network Assessment",
+          "subsections": [
+            {
+              "title": "Scan Parameters",
+              "content": "Network: 192.168.1.0/24"
+            }
+          ]
+        },
+        {
+          "heading": "Discovered Assets",
+          "table": [
+            [
+              "IP Address",
+              "Manufacturer",
+              "Type",
+              "Vulnerabilities"
+            ],
+            [
+              "192.168.1.100",
+              "Hikvision",
+              "IP Camera",
+              "1"
+            ]
+          ]
+        },
+        {
+          "heading": "Vulnerability Details",
+          "table": [
+            [
+              "Device IP",
+              "Vulnerability",
+              "Severity",
+              "CVE"
+            ],
+            [
+              "192.168.1.100",
+              "Authentication Bypass",
+              "CRITICAL",
+              "CVE-2017-7921"
+            ]
+          ]
+        },
+        {
+          "heading": "Service Inventory",
+          "content": "Unique services discovered: 1"
+        }
+      ]
+    },
+    "compliance_report": {
+      "title": "CCTV VAPT Assessment - Compliance Report",
+      "type": "compliance",
+      "sections": [
+        {
+          "heading": "Assessment Scope",
+          "content": "Network: 192.168.1.0/24"
+        },
+        {
+          "heading": "Finding Severity Distribution",
+          "content": "\nCritical: 2\nHigh: 4\nMedium: 6\nLow: 3\n        "
+        },
+        {
+          "heading": "Compliance Status",
+          "content": "\nDevices with Critical Issues: 1\nTotal Vulnerabilities: 15\nRemediation Priority: Medium\n                    "
+        },
+        {
+          "heading": "Remediation Timeline",
+          "content": "\nCritical: Immediate (within 24 hours)\nHigh: Within 7 days\nMedium: Within 30 days\nLow: Within 60 days\n                    "
+        }
+      ]
+    }
+  },
+  "enriched_data": {
+    "report_metadata": {
+      "generated_at": "2026-02-25T14:44:48.077746",
+      "scan_id": 999,
+      "operator": "Test Operator",
+      "network": "192.168.1.0/24",
+      "duration": "0s"
+    },
+    "assets": [
+      {
+        "id": 1,
+        "ip": "192.168.1.100",
+        "mac": "00:11:22:33:44:55",
+        "manufacturer": "Hikvision",
+        "device_type": "IP Camera",
+        "is_cctv": true,
+        "confidence": 0.95,
+        "ports": [
+          {
+            "number": 80,
+            "protocol": "tcp",
+            "service": "http",
+            "banner": "Hikvision DVR"
+          }
+        ],
+        "vuln_count": 1
+      }
+    ],
+    "vulnerabilities": [
+      {
+        "id": 1,
+        "vuln_id": "HIK-001",
+        "title": "Authentication Bypass",
+        "severity": "critical",
+        "cvss": 10.0,
+        "cve": "CVE-2017-7921",
+        "device_ip": "192.168.1.100",
+        "remediation": "Update firmware"
+      }
+    ],
+    "statistics": {
+      "total_hosts": 10,
+      "cctv_devices": 3,
+      "total_vulnerabilities": 15,
+      "unique_services": 1,
+      "devices_with_vulns": 1
+    },
+    "risk_summary": {
+      "critical": 2,
+      "high": 4,
+      "medium": 6,
+      "low": 3
+    },
+    "risk_assessment": {
+      "score": 40,
+      "rating": "Medium",
+      "level": "yellow"
+    },
+    "critical_assets": [
+      {
+        "ip": "192.168.1.100",
+        "manufacturer": "Hikvision",
+        "critical_vuln_count": 1,
+        "total_vuln_count": 1,
+        "vulnerabilities": [
+          {
+            "id": 1,
+            "vuln_id": "HIK-001",
+            "title": "Authentication Bypass",
+            "severity": "critical",
+            "cvss": 10.0,
+            "cve": "CVE-2017-7921",
+            "device_ip": "192.168.1.100",
+            "remediation": "Update firmware"
+          }
+        ]
+      }
+    ],
+    "recommendations": [
+      {
+        "priority": "CRITICAL",
+        "recommendation": "Address 1 critical vulnerabilities immediately",
+        "action": "Review and patch firmware/update credentials"
+      }
+    ]
+  },
+  "status": "complete"
+}

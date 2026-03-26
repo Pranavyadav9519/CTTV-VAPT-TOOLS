@@ -1,0 +1,52 @@
+{
+  "report_metadata": {
+    "generated_at": "2026-02-06T15:14:44.292898",
+    "report_format": "json",
+    "tool_version": "1.0.0"
+  },
+  "scan_data": {
+    "id": 7,
+    "scan_id": "SCAN-C0290FB9",
+    "operator_name": "admin",
+    "status": "completed",
+    "scan_type": "network_discovery",
+    "network_range": "192.168.29.0/24",
+    "started_at": "2026-02-06T09:44:29.216358",
+    "completed_at": "2026-02-06T09:44:43.661990",
+    "total_hosts_found": 1,
+    "cctv_devices_found": 0,
+    "vulnerabilities_found": 0,
+    "severity_breakdown": {
+      "critical": 0,
+      "high": 0,
+      "medium": 0,
+      "low": 0
+    },
+    "devices": [
+      {
+        "id": 10,
+        "ip_address": "192.168.29.152",
+        "mac_address": "A0:02:A5:48:11:79",
+        "hostname": null,
+        "manufacturer": null,
+        "device_type": "unknown",
+        "model": null,
+        "firmware_version": null,
+        "is_cctv": false,
+        "confidence_score": 0.3,
+        "discovered_at": "2026-02-06T09:44:43.654323",
+        "ports": [
+          {
+            "port_number": 5000,
+            "protocol": "tcp",
+            "state": "open",
+            "service_name": "UPnP",
+            "service_version": null,
+            "banner": null
+          }
+        ],
+        "vulnerabilities": []
+      }
+    ]
+  }
+}

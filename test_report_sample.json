@@ -1,0 +1,18 @@
+{
+  "scan_info": {
+    "scan_id": "SCAN-EC22832C",
+    "operator": "web_user",
+    "network_range": "192.168.56.0/24",
+    "status": "completed",
+    "started_at": "2026-02-27T14:42:07.507349",
+    "completed_at": "2026-02-27T14:42:32.102142"
+  },
+  "summary": {
+    "total_devices": 0,
+    "cctv_devices": 0,
+    "total_ports": 0,
+    "total_vulnerabilities": 0
+  },
+  "devices": [],
+  "vulnerabilities": []
+}

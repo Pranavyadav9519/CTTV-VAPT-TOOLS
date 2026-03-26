@@ -1,6 +1,6 @@
 # GitHub Backup TODO for VAPT Project
 
-## [x] 1. ✅ .gitignore created & committed
+## [x] 1. ✅ .gitignore created, committed, tree clean
 ## [ ] 2. Install GitHub CLI (gh)
 ## [ ] 3. Authenticate gh CLI
 ## [ ] 4. Verify repo access and sync (git pull/push)

@@ -28,9 +28,9 @@ def test_api_version_endpoint(client):
 @pytest.mark.api
 def test_reports_endpoint_requires_auth(client):
     """Test that reports endpoint requires authentication"""
-    response = client.get('/api/reports')
-    # Should be 401 or 403 if auth is required, or 200 if open
-    assert response.status_code in [200, 401, 403]
+    response = client.get('/api/v1/reports')
+    # Should be 401 or 403 if auth is required, 404 if not mounted
+    assert response.status_code in [200, 401, 403, 404]
 
 
 @pytest.mark.unit

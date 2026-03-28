@@ -1,16 +1,14 @@
-"""
-Device Model with Tenant Isolation
-"""
+"""Device Model"""
 
 from datetime import datetime
-from app.extensions import db
+from backend.enterprise.extensions import db
 
 
 class Device(db.Model):
     __tablename__ = "devices"
 
     id = db.Column(db.Integer, primary_key=True)
-    tenant_id = db.Column(db.String(36), nullable=False, index=True)
+    tenant_id = db.Column(db.String(36), nullable=False, index=True, default="default")
     scan_id = db.Column(db.Integer, db.ForeignKey("scans.id"), nullable=False)
     ip_address = db.Column(db.String(45), nullable=False)
     mac_address = db.Column(db.String(17))

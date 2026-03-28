@@ -1,14 +1,14 @@
 """Report Model with Immutable Storage"""
 
 from datetime import datetime
-from app.extensions import db
+from backend.enterprise.extensions import db
 
 
 class Report(db.Model):
     __tablename__ = "reports"
 
     id = db.Column(db.Integer, primary_key=True)
-    tenant_id = db.Column(db.String(36), nullable=False, index=True)
+    tenant_id = db.Column(db.String(36), nullable=False, index=True, default="default")
     report_id = db.Column(db.String(50), unique=True, nullable=False, index=True)
     scan_id = db.Column(db.Integer, db.ForeignKey("scans.id"), nullable=False)
     title = db.Column(db.String(255))

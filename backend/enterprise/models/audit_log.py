@@ -1,20 +1,18 @@
-"""
-Audit Log Model with HMAC Integrity
-"""
+"""Audit Log Model with HMAC Integrity"""
 
 import os
 import json
 import hmac
 import hashlib
 from datetime import datetime
-from app.extensions import db
+from backend.enterprise.extensions import db
 
 
 class AuditLog(db.Model):
     __tablename__ = "audit_logs"
 
     id = db.Column(db.Integer, primary_key=True)
-    tenant_id = db.Column(db.String(36), nullable=False, index=True)
+    tenant_id = db.Column(db.String(36), nullable=False, index=True, default="default")
     scan_id = db.Column(db.Integer, db.ForeignKey("scans.id"))
     user_id = db.Column(db.Integer, db.ForeignKey("users.id"))
     timestamp = db.Column(db.DateTime, default=datetime.utcnow, index=True)

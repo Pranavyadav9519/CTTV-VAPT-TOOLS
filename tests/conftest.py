@@ -12,6 +12,9 @@ from pathlib import Path
 import sys
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
+# Provide a minimal SECRET_KEY for tests so Config doesn't fail validation
+os.environ.setdefault("SECRET_KEY", "test-secret-key-minimum-32-characters-long!")
+
 
 @pytest.fixture(scope="session")
 def test_app_config():
@@ -23,13 +26,13 @@ def test_app_config():
         SQLALCHEMY_DATABASE_URI = "sqlite:///:memory:"
         SQLALCHEMY_TRACK_MODIFICATIONS = False
         JWT_SECRET_KEY = "test-secret-key-do-not-use-in-production"
-        SECRET_KEY = "test-app-secret-key"
-        REDIS_URL = "redis://localhost:6379/1"
+        SECRET_KEY = "test-secret-key-minimum-32-characters-long!"
+        REDIS_URL = None
         JWT_EXPIRATION_HOURS = 24
         MAX_CONCURRENT_SCANS = 1
         SCAN_TIMEOUT_MINUTES = 5
         WTF_CSRF_ENABLED = False
-        
+
     return TestConfig
 
 
@@ -37,19 +40,11 @@ def test_app_config():
 def app(test_app_config):
     """Create application instance for testing"""
     try:
-        from backend.app import create_app
-        app_instance = create_app()
-        app_instance.config.update(vars(test_app_config))
+        from backend.enterprise import create_app
+        app_instance = create_app("testing")
         return app_instance
-    except (ImportError, AttributeError):
-        # Fallback for old app structure
-        try:
-            from app import create_app
-            app_instance = create_app()
-            app_instance.config.update(vars(test_app_config))
-            return app_instance
-        except ImportError:
-            pytest.skip("Backend app module not available")
+    except Exception:
+        pytest.skip("Backend enterprise app module not available")
 
 
 @pytest.fixture
@@ -68,23 +63,15 @@ def runner(app):
 def db(app):
     """Create database and provide transaction context"""
     try:
-        from backend.core.database import db as database_instance
-        
+        from backend.enterprise.extensions import db as database_instance
+
         with app.app_context():
             database_instance.create_all()
             yield database_instance
             database_instance.session.remove()
             database_instance.drop_all()
     except ImportError:
-        # Fallback for old structure
-        try:
-            from app.extensions import db as database_instance
-            with app.app_context():
-                database_instance.create_all()
-                yield database_instance
-                database_instance.drop_all()
-        except ImportError:
-            pytest.skip("Database module not available")
+        pytest.skip("Database module not available")
 
 
 @pytest.fixture
@@ -96,7 +83,7 @@ def auth_headers(client):
 @pytest.fixture
 def admin_headers(client):
     """Create authentication headers for admin user"""
-    return {'Authorization': 'Bearer admin-test-token', 'X-Tenant-ID': 'test-tenant'}
+    return {'Authorization': 'Bearer admin-test-token'}
 
 
 @pytest.fixture

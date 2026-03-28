@@ -2,17 +2,13 @@
 Database Models
 """
 
-from app.models.user import User, UserRole
-from app.models.scan import Scan, ScanStatus
-from app.models.device import Device
-from app.models.port import Port
-from app.models.vulnerability import Vulnerability
-from app.models.audit_log import AuditLog
-from app.models.report import Report
-try:
-    from app.models.idempotency import IdempotencyKey
-except Exception:  # idempotency model may live elsewhere or be optional in tests
-    IdempotencyKey = None
+from backend.enterprise.models.user import User, UserRole
+from backend.enterprise.models.scan import Scan, ScanStatus
+from backend.enterprise.models.device import Device
+from backend.enterprise.models.port import Port
+from backend.enterprise.models.vulnerability import Vulnerability
+from backend.enterprise.models.audit_log import AuditLog
+from backend.enterprise.models.report import Report
 
 __all__ = [
     "User",
@@ -25,7 +21,4 @@ __all__ = [
     "AuditLog",
     "Report",
 ]
-
-if IdempotencyKey is not None:
-    __all__.append("IdempotencyKey")
 

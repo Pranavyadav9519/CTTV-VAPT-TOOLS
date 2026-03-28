@@ -1,8 +1,8 @@
-"""Scan Model with Tenant Isolation"""
+"""Scan Model - Single Tenant"""
 
 import enum
 from datetime import datetime
-from app.extensions import db
+from backend.enterprise.extensions import db
 
 
 class ScanStatus(enum.Enum):
@@ -17,9 +17,9 @@ class Scan(db.Model):
     __tablename__ = "scans"
 
     id = db.Column(db.Integer, primary_key=True)
-    tenant_id = db.Column(db.String(36), nullable=False, index=True)
+    tenant_id = db.Column(db.String(36), nullable=False, index=True, default="default")
     scan_id = db.Column(db.String(50), unique=True, nullable=False, index=True)
-    user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=True)
     operator_name = db.Column(db.String(100), nullable=False)
     status = db.Column(db.Enum(ScanStatus), default=ScanStatus.PENDING)
     scan_type = db.Column(db.String(50), default="network_discovery")

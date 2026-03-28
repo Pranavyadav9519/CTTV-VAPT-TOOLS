@@ -1,9 +1,7 @@
-"""
-Port quickly. Model
-"""
+"""Port Model"""
 
 from datetime import datetime
-from app.extensions import db
+from backend.enterprise.extensions import db
 
 
 class Port(db.Model):

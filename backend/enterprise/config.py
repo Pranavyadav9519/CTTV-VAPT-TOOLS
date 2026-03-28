@@ -21,9 +21,7 @@ class Config:
     LOGS_DIR = BASE_DIR / "logs"
     DATA_DIR = BASE_DIR / "data"
 
-    SECRET_KEY = os.environ.get("SECRET_KEY")
-    if not SECRET_KEY:
-        raise ValueError("SECRET_KEY environment variable is required")
+    SECRET_KEY = os.environ.get("SECRET_KEY", "")
 
     JWT_SECRET_KEY = os.environ.get("JWT_SECRET_KEY", SECRET_KEY)
     JWT_ACCESS_TOKEN_EXPIRE = timedelta(hours=1)
@@ -112,8 +110,6 @@ class Config:
         from cryptography.fernet import Fernet
         ENCRYPTION_KEY = Fernet.generate_key().decode()
 
-    REPORT_RETENTION_DAYS = int(os.environ.get("REPORT_RETENTION_DAYS", 90))
-
     IDEMPOTENCY_TTL = 86400
 
     WORKER_MAX_MEMORY_MB = int(os.environ.get("WORKER_MAX_MEMORY_MB", 512))
@@ -142,6 +138,20 @@ class Config:
         return errors
 
     @classmethod
+    def load_from_env(cls):
+        """Return the config class (already loaded from env at definition time)."""
+        return cls
+
+    @classmethod
+    def as_flask_dict(cls) -> Dict[str, Any]:
+        """Return all uppercase class attributes as a dict suitable for Flask config."""
+        return {
+            key: getattr(cls, key)
+            for key in dir(cls)
+            if key.isupper() and not key.startswith("_")
+        }
+
+    @classmethod
     def init_directories(cls):
         for directory in [cls.REPORTS_DIR, cls.LOGS_DIR, cls.DATA_DIR]:
             directory.mkdir(parents=True, exist_ok=True)
@@ -163,6 +173,7 @@ class ProductionConfig(Config):
 class TestingConfig(Config):
     TESTING = True
     SQLALCHEMY_DATABASE_URI = "sqlite:///:memory:"
+    SQLALCHEMY_ENGINE_OPTIONS = {}
     RATELIMIT_ENABLED = False
 
 

@@ -1,1 +1,1 @@
-from backend.app.storage.local_storage import LocalStorage
+from backend.enterprise.storage.local_storage import LocalStorage

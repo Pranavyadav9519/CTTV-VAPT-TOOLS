@@ -1,10 +1,8 @@
-"""
-User Model with RBAC Support
-"""
+"""User Model with RBAC Support"""
 
 import enum
 from datetime import datetime
-from app.extensions import db
+from backend.enterprise.extensions import db
 
 
 class UserRole(enum.Enum):
@@ -17,7 +15,7 @@ class User(db.Model):
     __tablename__ = "users"
 
     id = db.Column(db.Integer, primary_key=True)
-    tenant_id = db.Column(db.String(36), nullable=False, index=True)
+    tenant_id = db.Column(db.String(36), nullable=False, index=True, default="default")
     username = db.Column(db.String(100), unique=True, nullable=False)
     email = db.Column(db.String(255), unique=True, nullable=False)
     password_hash = db.Column(db.String(255), nullable=False)

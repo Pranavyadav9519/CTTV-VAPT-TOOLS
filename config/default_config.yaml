@@ -1,0 +1,65 @@
+# CTTV-VAPT-TOOLS CRR Pipeline — Default Configuration
+# Override individual settings using environment variables prefixed with CRR_
+# e.g. CRR_SCAN_TIMEOUT=30 overrides scan.timeout
+
+scan:
+  # Network scan settings
+  arp_timeout: 3             # ARP scan timeout per packet (seconds)
+  arp_retry: 2               # ARP retry count
+  socket_timeout: 1          # Socket connection timeout (seconds)
+  socket_ports:              # Ports checked during socket fallback scan
+    - 80
+    - 443
+    - 554
+    - 8080
+    - 37777      # Dahua DVR
+    - 34567      # XMEye / generic DVR
+    - 8000       # Hikvision SDK
+    - 8554       # RTSP alternate
+    - 9000       # Hikvision ISAPI
+    - 5000       # Various
+    - 8899       # Reolink
+    - 6036       # Uniview
+    - 7777       # Dahua debug
+    - 3702       # ONVIF WS-Discovery
+    - 8443       # HTTPS alternate
+    - 10554      # RTSP alternate 2
+    - 23         # Telnet
+    - 21         # FTP
+    - 22         # SSH
+
+discovery:
+  onvif:
+    enabled: true
+    timeout: 3.0             # WS-Discovery response wait (seconds)
+  ssdp:
+    enabled: true
+    timeout: 3.0             # SSDP response wait (seconds)
+    fetch_descriptions: true # Fetch UPnP device description XML
+    filter_cameras_only: false
+  rtsp:
+    enabled: true
+    timeout: 2.0             # Per-connection RTSP timeout (seconds)
+    ports: [554, 8554, 5554, 8080, 10554]
+    max_workers: 20
+
+fingerprinting:
+  firmware:
+    enabled: true
+    timeout: 3.0
+
+analysis:
+  attack_path:
+    enabled: true
+
+reporting:
+  output_dir: reports/crr
+  formats:
+    - html
+    - json
+    - markdown
+
+logging:
+  level: INFO                # DEBUG / INFO / WARNING / ERROR / CRITICAL
+  log_dir: logs
+  log_file: crr_pipeline.log

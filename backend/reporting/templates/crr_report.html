@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>CCTV VAPT Report — {{ report_id }}</title>
+<style>
+  :root {
+    --bg: #0d1117;
+    --bg-card: #161b22;
+    --bg-card2: #1c2128;
+    --border: #30363d;
+    --text: #c9d1d9;
+    --text-dim: #8b949e;
+    --accent: #58a6ff;
+    --accent2: #79c0ff;
+    --orange: #ffa657;
+    --critical: #d63031;
+    --high: #e17055;
+    --medium: #fdcb6e;
+    --low: #00b894;
+    --info: #74b9ff;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', Arial, sans-serif; background: var(--bg);
+         color: var(--text); padding: 24px; line-height: 1.6; }
+  h1 { color: var(--accent); font-size: 1.8em; margin-bottom: 8px; }
+  h2 { color: var(--accent2); font-size: 1.3em; border-bottom: 1px solid var(--border);
+       padding-bottom: 8px; margin: 28px 0 16px; }
+  h3 { color: var(--orange); font-size: 1.1em; margin: 20px 0 8px; }
+  p  { margin-bottom: 12px; }
+  a  { color: var(--accent); }
+  table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+  th { background: var(--bg-card); color: var(--text-dim); text-align: left;
+       padding: 10px 12px; font-size: 0.82em; font-weight: 600; text-transform: uppercase; }
+  td { padding: 9px 12px; border-bottom: 1px solid var(--border); font-size: 0.9em; }
+  tr:hover td { background: var(--bg-card); }
+  .card { background: var(--bg-card); border: 1px solid var(--border);
+          border-radius: 8px; padding: 18px; margin-bottom: 16px; }
+  .badge { display: inline-block; padding: 2px 10px; border-radius: 12px;
+           font-size: 0.78em; font-weight: 700; letter-spacing: 0.04em; }
+  .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+  .grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+  .metric { background: var(--bg-card2); border: 1px solid var(--border);
+            border-radius: 6px; padding: 14px; text-align: center; }
+  .metric .num { font-size: 2em; font-weight: 700; }
+  .metric .lbl { font-size: 0.78em; color: var(--text-dim); text-transform: uppercase; }
+  .mermaid-block { background: var(--bg); border: 1px dashed var(--border);
+                   border-radius: 6px; padding: 12px; font-family: monospace;
+                   white-space: pre; font-size: 0.78em; overflow-x: auto; color: #adbac7; }
+  .narrative p { color: var(--text); margin-bottom: 10px; }
+  .risk-CRITICAL, .risk-critical { color: var(--critical); }
+  .risk-HIGH,     .risk-high     { color: var(--high); }
+  .risk-MEDIUM,   .risk-medium   { color: var(--medium); }
+  .risk-LOW,      .risk-low      { color: var(--low); }
+  .risk-INFO,     .risk-info     { color: var(--info); }
+  .footer { margin-top: 40px; padding-top: 16px; border-top: 1px solid var(--border);
+            font-size: 0.78em; color: var(--text-dim); text-align: center; }
+  @media print {
+    body { background: #fff; color: #000; }
+    .card { border: 1px solid #ccc; }
+    h1, h2, h3 { color: #000; }
+    .mermaid-block { color: #333; background: #f5f5f5; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ===== HEADER ===== -->
+<h1>&#x1F6E1; CCTV VAPT Penetration Report</h1>
+<p style="color:var(--text-dim)">Report ID: <strong>{{ report_id }}</strong> &nbsp;|&nbsp;
+  Generated: <strong>{{ generated_at }}</strong> &nbsp;|&nbsp;
+  Network: <strong>{{ scan_metadata.get('network_range', 'N/A') }}</strong>
+</p>
+
+<!-- ===== EXECUTIVE SUMMARY ===== -->
+<h2>&#x1F4CA; Executive Summary</h2>
+<div class="grid-3">
+  <div class="metric">
+    <div class="num" style="color:var(--accent)">{{ total_devices }}</div>
+    <div class="lbl">Devices Found</div>
+  </div>
+  <div class="metric">
+    <div class="num" style="color:{{ overall_risk_colour }}">{{ overall_risk }}</div>
+    <div class="lbl">Overall Risk</div>
+  </div>
+  <div class="metric">
+    <div class="num" style="color:var(--critical)">{{ severity_counts.get('critical', 0) }}</div>
+    <div class="lbl">Critical Findings</div>
+  </div>
+  <div class="metric">
+    <div class="num" style="color:var(--high)">{{ severity_counts.get('high', 0) }}</div>
+    <div class="lbl">High Findings</div>
+  </div>
+  <div class="metric">
+    <div class="num" style="color:var(--medium)">{{ severity_counts.get('medium', 0) }}</div>
+    <div class="lbl">Medium Findings</div>
+  </div>
+  <div class="metric">
+    <div class="num" style="color:var(--low)">{{ severity_counts.get('low', 0) }}</div>
+    <div class="lbl">Low Findings</div>
+  </div>
+</div>
+
+<!-- ===== SCOPE & METHODOLOGY ===== -->
+<h2>&#x1F50D; Scope &amp; Methodology</h2>
+<div class="card">
+  <table>
+    <tr><td><strong>Network Range</strong></td><td>{{ scan_metadata.get('network_range', 'N/A') }}</td></tr>
+    <tr><td><strong>Scan Started</strong></td><td>{{ scan_metadata.get('start_time', 'N/A') }}</td></tr>
+    <tr><td><strong>Scan Duration</strong></td><td>{{ scan_metadata.get('duration', 'N/A') }}</td></tr>
+    <tr><td><strong>Protocols Used</strong></td>
+        <td>ARP Sweep, ONVIF WS-Discovery (UDP 3702), SSDP/UPnP (UDP 1900), RTSP Probe (TCP 554/8554)</td></tr>
+    <tr><td><strong>Assessment Type</strong></td><td>Non-destructive black-box security assessment</td></tr>
+    <tr><td><strong>Operator</strong></td><td>{{ scan_metadata.get('operator', 'CTTV-VAPT-TOOLS') }}</td></tr>
+  </table>
+</div>
+
+<!-- ===== DEVICES TABLE ===== -->
+<h2>&#x1F4F7; Devices Discovered</h2>
+<table>
+  <thead>
+    <tr>
+      <th>IP Address</th><th>Manufacturer</th><th>Model</th>
+      <th>Firmware</th><th>Risk Level</th><th>Risk Score</th><th>Vulns</th>
+    </tr>
+  </thead>
+  <tbody>
+  {% for card in device_cards %}
+  <tr>
+    <td><strong>{{ card.device.get('ip_address', '') }}</strong></td>
+    <td>{{ card.device.get('manufacturer', '') or card.device.get('manufacturer_hint', '') }}</td>
+    <td>{{ card.device.get('model', '') }}</td>
+    <td>{{ card.firmware.get('firmware_version', '') or '—' }}</td>
+    <td><span class="risk-{{ card.risk_level }}">{{ card.risk_level }}</span></td>
+    <td>{{ '%.1f'|format(card.risk_score|float) }}/10</td>
+    <td>
+      {% set sc = card.severity_counts %}
+      <span style="color:var(--critical)">{{ sc.get('critical',0) }}C</span>
+      <span style="color:var(--high)">{{ sc.get('high',0) }}H</span>
+      <span style="color:var(--medium)">{{ sc.get('medium',0) }}M</span>
+    </td>
+  </tr>
+  {% else %}
+  <tr><td colspan="7" style="text-align:center;color:var(--text-dim)">No devices discovered.</td></tr>
+  {% endfor %}
+  </tbody>
+</table>
+
+<!-- ===== PER-DEVICE CARDS ===== -->
+<h2>&#x1F4CB; Per-Device Assessment</h2>
+{% for card in device_cards %}
+<div class="card">
+  <h3>&#x1F4CD; {{ card.device.get('ip_address', '') }}
+    <span class="badge" style="background:{{ card.risk_level | lower | replace('critical','#d63031') | replace('high','#e17055') | replace('medium','#fdcb6e') | replace('low','#00b894') | replace('info','#74b9ff') }};color:#000">
+      {{ card.risk_level }}
+    </span>
+    <span style="font-size:0.85em;color:var(--text-dim)">Risk Score: {{ '%.1f'|format(card.risk_score|float) }}/10</span>
+  </h3>
+
+  <!-- Device info grid -->
+  <div class="grid-2" style="margin-bottom:12px">
+    <div>
+      <p><strong>Manufacturer:</strong> {{ card.device.get('manufacturer','') or card.device.get('manufacturer_hint','Unknown') }}</p>
+      <p><strong>Model:</strong> {{ card.device.get('model','Unknown') }}</p>
+      <p><strong>MAC Address:</strong> {{ card.device.get('mac_address','Unknown') }}</p>
+    </div>
+    <div>
+      <p><strong>Firmware:</strong> {{ card.firmware.get('firmware_version','Unknown') }}</p>
+      <p><strong>Discovery Methods:</strong> {{ (card.device.get('discovery_methods', [card.device.get('discovery_method','')]) | join(', ')) }}</p>
+      <p><strong>Confidence:</strong> {{ '%.0f'|format(card.device.get('confidence', 0) * 100) }}%</p>
+    </div>
+  </div>
+
+  <!-- Attack narrative -->
+  {% if card.narrative.get('full_narrative') %}
+  <h3>&#x1F4D6; Attack Narrative</h3>
+  <div class="narrative card" style="background:var(--bg-card2)">
+    {% for para in card.narrative.full_narrative.split('\n\n') %}
+      {% if para.strip() %}<p>{{ para.strip() }}</p>{% endif %}
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <!-- Attack path diagram -->
+  {% if card.mermaid_diagram %}
+  <h3>&#x1F578; Attack Path Diagram (Mermaid)</h3>
+  <div class="mermaid-block">{{ card.mermaid_diagram }}</div>
+  {% endif %}
+
+  <!-- Vulnerability cards -->
+  {% if card.vulnerabilities %}
+  <h3>&#x26A0; Vulnerabilities ({{ card.vulnerabilities|length }})</h3>
+  {% for vuln in card.vulnerabilities %}
+  <div class="card" style="background:var(--bg-card2);border-left:4px solid {{ severity_colour(vuln.get('severity','info')) }};margin-bottom:8px">
+    <p><strong>{{ vuln.get('title', 'Unknown') }}</strong>
+       <span class="badge" style="background:{{ severity_colour(vuln.get('severity','info')) }};color:#000">
+         {{ (vuln.get('severity','info') or 'info').upper() }}
+       </span>
+       {% if vuln.get('cve_id') %}<span style="color:var(--text-dim);font-size:0.85em">&nbsp;{{ vuln.cve_id }}</span>{% endif %}
+       {% if vuln.get('cvss_score') %}<span style="color:var(--text-dim);font-size:0.85em">&nbsp;CVSS {{ vuln.cvss_score }}</span>{% endif %}
+    </p>
+    {% if vuln.get('description') %}<p style="color:var(--text-dim)">{{ vuln.description }}</p>{% endif %}
+    {% if vuln.get('remediation') %}<p><strong>Fix:</strong> {{ vuln.remediation }}</p>{% endif %}
+  </div>
+  {% endfor %}
+  {% endif %}
+</div>
+{% endfor %}
+
+<!-- ===== REMEDIATION ROADMAP ===== -->
+<h2>&#x1F6E0; Remediation Roadmap</h2>
+<table>
+  <thead>
+    <tr><th>Severity</th><th>Finding</th><th>Effort Estimate</th><th>CVE</th></tr>
+  </thead>
+  <tbody>
+  {% for item in remediation_roadmap %}
+  <tr>
+    <td><span class="badge" style="background:{{ item.colour }};color:#000">{{ item.severity.upper() }}</span></td>
+    <td>
+      <strong>{{ item.title }}</strong>
+      {% if item.description %}<br/><span style="font-size:0.85em;color:var(--text-dim)">{{ item.description[:200] }}</span>{% endif %}
+    </td>
+    <td>{{ item.effort }}</td>
+    <td>{{ item.cve_id or '—' }}</td>
+  </tr>
+  {% else %}
+  <tr><td colspan="4" style="text-align:center;color:var(--text-dim)">No remediation items.</td></tr>
+  {% endfor %}
+  </tbody>
+</table>
+
+<!-- ===== FOOTER ===== -->
+<div class="footer">
+  <p>Generated by <strong>CTTV-VAPT-TOOLS CRR Pipeline</strong> &mdash; {{ generated_at }}</p>
+  <p>This report is confidential. Handle in accordance with your organisation's data classification policy.
+     All assessments were non-destructive. CVE data sourced from NIST NVD.</p>
+</div>
+</body>
+</html>

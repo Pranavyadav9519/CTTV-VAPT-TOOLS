@@ -28,7 +28,7 @@ def _verify_password(plain_password: str, stored_credential: str) -> bool:
       2. Plain string (legacy / dev) — compared via constant-time ``hmac.compare_digest``
          to prevent timing attacks.
     """
-    if stored_credential.startswith(("$2b$", "$2a$")):
+    if stored_credential.startswith(("$2b$", "$2a$", "$2y$")):
         return bcrypt.checkpw(
             plain_password.encode("utf-8"),
             stored_credential.encode("utf-8"),

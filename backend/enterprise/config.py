@@ -128,7 +128,7 @@ class Config:
             errors.append("SECRET_KEY must be at least 32 characters")
         if not cls.ENCRYPTION_KEY:
             errors.append("ENCRYPTION_KEY is required – generate with: python -c \"from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())\"")
-        elif len(cls.ENCRYPTION_KEY) < 32:
+        elif len(cls.ENCRYPTION_KEY) < 44:
             errors.append("ENCRYPTION_KEY must be a valid Fernet key (44 characters)")
         if cls.SCAN_TIMEOUT <= 0:
             errors.append("SCAN_TIMEOUT must be positive")

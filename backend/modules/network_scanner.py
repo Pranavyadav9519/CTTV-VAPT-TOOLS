@@ -262,7 +262,23 @@ class NetworkScanner:
             def check_host(ip):
                 """Check if host is alive by attempting connection"""
                 ip_str = str(ip)
-                ports_to_check = [80, 443, 554, 8080]
+                ports_to_check = [
+                    # Core web / RTSP
+                    80, 443, 554, 8080,
+                    # Manufacturer-specific CCTV ports
+                    37777,   # Dahua DVR
+                    34567,   # XMEye / generic DVR
+                    8000,    # Hikvision SDK
+                    8554,    # RTSP alternate
+                    9000,    # Hikvision ISAPI
+                    5000,    # Various
+                    8899,    # Reolink
+                    6036,    # Uniview
+                    7777,    # Dahua debug
+                    3702,    # ONVIF WS-Discovery
+                    8443,    # HTTPS alternate
+                    10554,   # RTSP alternate 2
+                ]
 
                 for port in ports_to_check:
                     try:

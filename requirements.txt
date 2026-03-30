@@ -54,3 +54,6 @@ pylint==3.0.3
 # Development
 python-decouple==3.8
 ipython==8.19.0
+
+# CRR Pipeline additions
+PyYAML>=6.0               # YAML-based configuration management

@@ -6,6 +6,7 @@ from backend.enterprise.extensions import db
 
 
 class ScanStatus(enum.Enum):
+    QUEUED = "queued"
     PENDING = "pending"
     RUNNING = "running"
     COMPLETED = "completed"

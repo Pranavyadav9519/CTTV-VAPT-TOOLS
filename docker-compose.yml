@@ -51,8 +51,11 @@ services:
       DEBUG: ${DEBUG:-False}
       DATABASE_URL: postgresql://${DB_USER:-vapt}:${DB_PASSWORD:-secure_password}@db:5432/${DB_NAME:-vapt_db}
       REDIS_URL: redis://redis:6379/0
-      SECRET_KEY: ${SECRET_KEY:-change-me-to-random-secret}
-      JWT_SECRET_KEY: ${JWT_SECRET_KEY:-change-me-to-random-secret}
+      SECRET_KEY: ${SECRET_KEY}
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY}
+      ENCRYPTION_KEY: ${ENCRYPTION_KEY}
+      ADMIN_USER: ${ADMIN_USER}
+      ADMIN_PASS: ${ADMIN_PASS}
       CELERY_BROKER_URL: redis://redis:6379/0
       CELERY_RESULT_BACKEND: redis://redis:6379/0
     ports:
@@ -64,8 +67,8 @@ services:
         condition: service_healthy
     volumes:
       - ./backend:/app:ro
-      - backend_reports:/app/reports
-      - backend_logs:/app/logs
+      - shared_reports:/app/reports
+      - shared_logs:/app/logs
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
       interval: 30s
@@ -87,6 +90,9 @@ services:
       DEBUG: ${DEBUG:-False}
       DATABASE_URL: postgresql://${DB_USER:-vapt}:${DB_PASSWORD:-secure_password}@db:5432/${DB_NAME:-vapt_db}
       REDIS_URL: redis://redis:6379/0
+      SECRET_KEY: ${SECRET_KEY}
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY}
+      ENCRYPTION_KEY: ${ENCRYPTION_KEY}
       CELERY_BROKER_URL: redis://redis:6379/0
       CELERY_RESULT_BACKEND: redis://redis:6379/0
     depends_on:
@@ -96,8 +102,8 @@ services:
         condition: service_healthy
     volumes:
       - ./backend:/app:ro
-      - worker_reports:/app/reports
-      - worker_logs:/app/logs
+      - shared_reports:/app/reports
+      - shared_logs:/app/logs
     restart: unless-stopped
     command: celery -A backend.celery_app worker --loglevel=info --concurrency=4
     networks:
@@ -126,13 +132,9 @@ volumes:
     driver: local
   redis_data:
     driver: local
-  backend_reports:
+  shared_reports:
     driver: local
-  backend_logs:
-    driver: local
-  worker_reports:
-    driver: local
-  worker_logs:
+  shared_logs:
     driver: local
 
 # Custom network

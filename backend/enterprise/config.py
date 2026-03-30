@@ -105,10 +105,7 @@ class Config:
     LOG_LEVEL = os.environ.get("LOG_LEVEL", "INFO").upper()
     LOG_FORMAT = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 
-    ENCRYPTION_KEY = os.environ.get("ENCRYPTION_KEY")
-    if not ENCRYPTION_KEY:
-        from cryptography.fernet import Fernet
-        ENCRYPTION_KEY = Fernet.generate_key().decode()
+    ENCRYPTION_KEY = os.environ.get("ENCRYPTION_KEY", "")
 
     IDEMPOTENCY_TTL = 86400
 
@@ -129,6 +126,10 @@ class Config:
             errors.append("SECRET_KEY is required")
         elif len(cls.SECRET_KEY) < 32:
             errors.append("SECRET_KEY must be at least 32 characters")
+        if not cls.ENCRYPTION_KEY:
+            errors.append("ENCRYPTION_KEY is required – generate with: python -c \"from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())\"")
+        elif len(cls.ENCRYPTION_KEY) < 32:
+            errors.append("ENCRYPTION_KEY must be a valid Fernet key (44 characters)")
         if cls.SCAN_TIMEOUT <= 0:
             errors.append("SCAN_TIMEOUT must be positive")
         if cls.PORT_SCAN_TIMEOUT <= 0:

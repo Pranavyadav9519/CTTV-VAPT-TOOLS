@@ -12,7 +12,7 @@ from backend.enterprise.extensions import db
 from backend.enterprise.models.device import Device
 from backend.enterprise.models.port import Port
 from backend.enterprise.models.report import Report
-from backend.enterprise.models.scan import Scan
+from backend.enterprise.models.scan import Scan, ScanStatus
 from backend.enterprise.models.vulnerability import Vulnerability
 from backend.enterprise.repositories.report_repo import ReportRepository
 from backend.enterprise.storage.local_storage import LocalStorage
@@ -43,9 +43,9 @@ def run_scan(self, scan_db_id: int, scan_id: str, timeout: int = 1800):
         )
         if not scan:
             return {'success': False, 'error': 'scan not found'}
-        if scan.status not in ('queued', 'pending'):
+        if scan.status not in (ScanStatus.QUEUED, ScanStatus.PENDING):
             return {'success': False, 'error': f'unexpected scan status: {scan.status}'}
-        scan.status = 'running'
+        scan.status = ScanStatus.RUNNING
         db.session.add(scan)
 
     operator = scan.operator_name if scan else 'system'
@@ -142,7 +142,7 @@ def run_scan(self, scan_db_id: int, scan_id: str, timeout: int = 1800):
         # ---- Update scan statistics + mark completed --------------------
         with db.session.begin():
             s = db.session.query(Scan).filter(Scan.id == scan_db_id).first()
-            s.status = 'completed'
+            s.status = ScanStatus.COMPLETED
             s.completed_at = datetime.utcnow()
             s.total_hosts_found = result.total_hosts_found
             s.cctv_devices_found = result.cctv_devices_found
@@ -171,7 +171,7 @@ def run_scan(self, scan_db_id: int, scan_id: str, timeout: int = 1800):
         with db.session.begin():
             s = db.session.query(Scan).filter(Scan.id == scan_db_id).first()
             if s:
-                s.status = 'failed'
+                s.status = ScanStatus.FAILED
                 s.error_message = str(exc)
                 s.completed_at = datetime.utcnow()
                 db.session.add(s)

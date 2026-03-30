@@ -1,7 +1,7 @@
 from typing import Optional
 from sqlalchemy import select
 from backend.enterprise.extensions import db
-from backend.enterprise.models.scan import Scan
+from backend.enterprise.models.scan import Scan, ScanStatus
 
 
 class ScanRepository:
@@ -47,7 +47,7 @@ class ScanRepository:
             return (
                 db.session.query(Scan)
                 .filter(
-                    Scan.status.in_(["pending", "queued", "running"]),
+                    Scan.status.in_([ScanStatus.PENDING, ScanStatus.QUEUED, ScanStatus.RUNNING]),
                     Scan.is_deleted.is_(False),
                 )
                 .count()

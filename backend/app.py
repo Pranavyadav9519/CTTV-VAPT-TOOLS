@@ -276,7 +276,10 @@ def start_scan():
 def execute_scan(
     app_context, db_scan_id: int, scan_id: str, network_range: str, operator: str
 ):
-    """Execute the full scan pipeline with fault tolerance"""
+    """
+    Execute the full CRR scan pipeline via the shared scan engine.
+    Progress events are emitted over Socket.IO so the UI stays updated.
+    """
     with app_context:
         scan = None
         try:
@@ -284,157 +287,48 @@ def execute_scan(
             if not scan:
                 raise ValueError(f"Scan {db_scan_id} not found in database")
 
-            # Phase 1: Network Discovery
-            socketio.emit(
-                "scan_progress",
-                {
-                    "scan_id": scan_id,
-                    "phase": "discovery",
-                    "progress": 0,
-                    "message": "Starting network discovery...",
-                },
-            )
-
-            def discovery_callback(data):
+            # ---- Socket.IO progress callback ------------------------------------
+            def _progress(phase: str, progress: float, message: str) -> None:
                 socketio.emit(
                     "scan_progress",
                     {
                         "scan_id": scan_id,
-                        "phase": "discovery",
-                        "progress": data.get("progress", 0),
-                        "message": f"Discovered host: {data.get('host', {}).get('ip_address', '')}",
-                    },
-                )
-
-            try:
-                hosts = network_scanner.scan_network_arp(
-                    network_range, discovery_callback
-                )
-                scan.total_hosts_found = len(hosts)
-                db.session.commit()
-            except Exception as e:
-                logger.error(f"Network discovery failed: {e}")
-                socketio.emit(
-                    "scan_progress",
-                    {
-                        "scan_id": scan_id,
-                        "phase": "discovery",
-                        "progress": 100,
-                        "message": f"Network discovery failed: {e}",
-                    },
-                )
-                hosts = []  # Continue with empty host list
-
-            socketio.emit(
-                "scan_progress",
-                {
-                    "scan_id": scan_id,
-                    "phase": "discovery",
-                    "progress": 100,
-                    "message": f"Found {len(hosts)} hosts",
-                },
-            )
-
-            # Phase 2: Device Identification
-            socketio.emit(
-                "scan_progress",
-                {
-                    "scan_id": scan_id,
-                    "phase": "identification",
-                    "progress": 0,
-                    "message": "Identifying CCTV devices...",
-                },
-            )
-
-            cctv_devices = []
-            ports_data = {}
-            banners_data = {}
-
-            for idx, host in enumerate(hosts):
-                ip = host.get("ip_address")
-                if not ip:
-                    continue
-
-                try:
-                    # Port scan
-                    port_result = port_scanner.scan_host(ip)
-                    ports_data[ip] = port_result.get("open_ports", [])
-                    banners_data[ip] = port_result.get("banners", {})
-                except Exception as e:
-                    logger.debug(f"Port scan failed for {ip}: {e}")
-                    ports_data[ip] = []
-                    banners_data[ip] = {}
-
-                progress = ((idx + 1) / len(hosts)) * 100 if hosts else 0
-                socketio.emit(
-                    "scan_progress",
-                    {
-                        "scan_id": scan_id,
-                        "phase": "identification",
+                        "phase": phase,
                         "progress": progress,
-                        "message": f"Scanning {ip}...",
+                        "message": message,
                     },
                 )
 
-            # Identify devices
-            try:
-                identified = device_identifier.bulk_identify(
-                    hosts, ports_data, banners_data
-                )
-                cctv_devices = device_identifier.filter_cctv_devices(identified)
-            except Exception as e:
-                logger.error(f"Device identification failed: {e}")
-                identified = hosts  # Fallback to basic host info
-                cctv_devices = []
+            _progress("discovery", 0, "Starting CRR scan pipeline…")
 
-            scan.cctv_devices_found = len(cctv_devices)
-            db.session.commit()
-
-            socketio.emit(
-                "scan_progress",
-                {
-                    "scan_id": scan_id,
-                    "phase": "identification",
-                    "progress": 100,
-                    "message": f"Identified {len(cctv_devices)} CCTV devices",
-                },
+            # ---- Run shared engine ----------------------------------------------
+            from core.scan_engine import run_scan as _engine_run_scan
+            result = _engine_run_scan(
+                scan_id=scan_id,
+                network_range=network_range,
+                progress_cb=_progress,
             )
 
-            # Phase 3: Vulnerability Scanning
-            socketio.emit(
-                "scan_progress",
-                {
-                    "scan_id": scan_id,
-                    "phase": "vulnerability",
-                    "progress": 0,
-                    "message": "Scanning for vulnerabilities...",
-                },
-            )
-
-            total_vulns = 0
-            severity_counts = {"critical": 0, "high": 0, "medium": 0, "low": 0}
-
-            for idx, device_info in enumerate(identified):
-                ip = device_info.get("ip_address")
-                if not ip:
-                    continue
-
+            # ---- Persist devices, ports, vulnerabilities -----------------------
+            for crr_dev in result.devices:
+                ip = crr_dev.ip_address
                 try:
-                    # Create device record
                     device = Device(
                         scan_id=scan.id,
                         ip_address=ip,
-                        mac_address=device_info.get("mac_address"),
-                        manufacturer=device_info.get("manufacturer"),
-                        device_type=device_info.get("device_type"),
-                        is_cctv=device_info.get("is_cctv", False),
-                        confidence_score=device_info.get("confidence_score", 0),
+                        mac_address=crr_dev.mac_address,
+                        hostname=crr_dev.hostname,
+                        manufacturer=crr_dev.manufacturer,
+                        model=crr_dev.model,
+                        firmware_version=crr_dev.firmware_version,
+                        device_type=crr_dev.device_type,
+                        is_cctv=crr_dev.is_cctv,
+                        confidence_score=crr_dev.confidence_score,
                     )
                     db.session.add(device)
                     db.session.flush()
 
-                    # Add ports
-                    for port_info in ports_data.get(ip, []):
+                    for port_info in result.ports_data.get(ip, []):
                         port = Port(
                             device_id=device.id,
                             port_number=port_info.get("port_number"),
@@ -445,70 +339,42 @@ def execute_scan(
                         )
                         db.session.add(port)
 
-                    # Vulnerability scan for CCTV devices
-                    if device_info.get("is_cctv"):
-                        try:
-                            vuln_result = vulnerability_scanner.scan_device(
-                                device_info, ports_data.get(ip, []), deep_scan=True
-                            )
+                    for vuln in result.vulnerabilities.get(ip, []):
+                        vuln_row = Vulnerability(
+                            device_id=device.id,
+                            vuln_id=vuln.vuln_id,
+                            title=vuln.title,
+                            description=vuln.description,
+                            severity=vuln.severity,
+                            cvss_score=vuln.cvss_score,
+                            cve_id=vuln.cve_id,
+                            cwe_id=vuln.cwe_id,
+                            remediation=vuln.remediation,
+                            proof_of_concept=vuln.proof_of_concept,
+                            references=json.dumps(vuln.references),
+                        )
+                        db.session.add(vuln_row)
 
-                            for vuln_info in vuln_result.get("vulnerabilities", []):
-                                vuln = Vulnerability(
-                                    device_id=device.id,
-                                    vuln_id=vuln_info.get("vuln_id"),
-                                    title=vuln_info.get("title"),
-                                    description=vuln_info.get("description"),
-                                    severity=vuln_info.get("severity"),
-                                    cvss_score=vuln_info.get("cvss_score"),
-                                    cve_id=vuln_info.get("cve_id"),
-                                    cwe_id=vuln_info.get("cwe_id"),
-                                    remediation=vuln_info.get("remediation"),
-                                    proof_of_concept=vuln_info.get("proof_of_concept"),
-                                    references=json.dumps(
-                                        vuln_info.get("references", [])
-                                    ),
-                                )
-                                db.session.add(vuln)
-
-                                total_vulns += 1
-                                sev = vuln_info.get("severity", "low")
-                                if sev in severity_counts:
-                                    severity_counts[sev] += 1
-                        except Exception as e:
-                            logger.debug(f"Vulnerability scan failed for {ip}: {e}")
-                            # Continue without failing the entire scan
-
-                except Exception as e:
-                    logger.error(f"Device processing failed for {ip}: {e}")
+                except Exception as dev_exc:
+                    logger.error(f"Device persistence failed for {ip}: {dev_exc}")
                     continue
 
-                progress = ((idx + 1) / len(identified)) * 100 if identified else 0
-                socketio.emit(
-                    "scan_progress",
-                    {
-                        "scan_id": scan_id,
-                        "phase": "vulnerability",
-                        "progress": progress,
-                        "message": f"Scanning {ip} for vulnerabilities...",
-                    },
-                )
-
-            # Update scan record
-            scan.vulnerabilities_found = total_vulns
-            scan.critical_count = severity_counts["critical"]
-            scan.high_count = severity_counts["high"]
-            scan.medium_count = severity_counts["medium"]
-            scan.low_count = severity_counts["low"]
+            # ---- Update scan summary -------------------------------------------
+            scan.total_hosts_found = result.total_hosts_found
+            scan.cctv_devices_found = result.cctv_devices_found
+            scan.vulnerabilities_found = result.vulnerabilities_found
+            scan.critical_count = result.critical_count
+            scan.high_count = result.high_count
+            scan.medium_count = result.medium_count
+            scan.low_count = result.low_count
             scan.status = "completed"
             scan.completed_at = datetime.utcnow()
             db.session.commit()
 
-            # Emit completion
             socketio.emit(
                 "scan_complete",
                 {"scan_id": scan_id, "status": "completed", "summary": scan.to_dict()},
             )
-
             logger.info(f"Scan {scan_id} completed successfully")
 
         except Exception as e:

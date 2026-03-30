@@ -2,7 +2,7 @@ from flask import Blueprint, request, jsonify, current_app
 from flask_jwt_extended import jwt_required, get_jwt
 from pydantic import BaseModel, ValidationError, field_validator
 from typing import Optional
-from backend.enterprise.models.scan import Scan
+from backend.enterprise.models.scan import Scan, ScanStatus
 from backend.enterprise.repositories.scan_repo import ScanRepository
 from backend.enterprise.security.idempotency import idempotency_required
 from backend.enterprise.security.rbac import roles_required
@@ -83,7 +83,7 @@ def start_scan():
         scan_id=scan_id,
         operator_name=payload.operator_name,
         network_range=payload.network_range,
-        status='queued',
+        status=ScanStatus.QUEUED,
     )
     try:
         scan = ScanRepository.add(scan)

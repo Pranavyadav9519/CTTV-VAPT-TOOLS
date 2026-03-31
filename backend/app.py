@@ -21,6 +21,7 @@ from modules.device_identifier import DeviceIdentifier
 from modules.port_scanner import PortScanner
 from modules.vulnerability_scanner import VulnerabilityScanner
 from modules.report_generator import ReportGenerator
+from modules.internet_scanner import InternetScanner
 import ipaddress
 from flask import current_app
 
@@ -68,6 +69,7 @@ device_identifier = DeviceIdentifier()
 port_scanner = PortScanner()
 vulnerability_scanner = VulnerabilityScanner()
 report_generator = ReportGenerator(str(Config.REPORTS_DIR))
+internet_scanner = InternetScanner()
 
 
 def audit_log(action: str):
@@ -519,6 +521,323 @@ def execute_scan(
                 scan.completed_at = datetime.utcnow()
                 db.session.commit()
 
+            socketio.emit("scan_error", {"scan_id": scan_id, "error": str(e)})
+
+
+@app.route("/api/scan/internet", methods=["POST"])
+@audit_log("internet_scan_started")
+@idempotency_required
+def start_internet_scan():
+    """Start a custom internet CCTV scanner scan on a specified target."""
+    data = request.get_json() or {}
+    operator_name = (data.get("operator_name") or "").strip()
+    target = (data.get("target") or "").strip()
+    request_id = request.headers.get("X-Request-ID") or str(uuid.uuid4())
+
+    if not operator_name:
+        return (
+            jsonify(
+                {
+                    "success": False,
+                    "data": None,
+                    "error": {"code": "operator.missing", "message": "Operator name is required"},
+                    "request_id": request_id,
+                }
+            ),
+            400,
+        )
+
+    if len(operator_name) > 100:
+        return (
+            jsonify(
+                {
+                    "success": False,
+                    "data": None,
+                    "error": {"code": "operator.invalid", "message": "Operator name too long"},
+                    "request_id": request_id,
+                }
+            ),
+            400,
+        )
+
+    if not target:
+        return (
+            jsonify(
+                {
+                    "success": False,
+                    "data": None,
+                    "error": {"code": "target.missing", "message": "Target IP / range is required"},
+                    "request_id": request_id,
+                }
+            ),
+            400,
+        )
+
+    # Validate that target is a parseable IP/range
+    if not internet_scanner.validate_target(target):
+        return (
+            jsonify(
+                {
+                    "success": False,
+                    "data": None,
+                    "error": {
+                        "code": "target.invalid",
+                        "message": "Invalid target. Use single IP, CIDR (e.g. 1.2.3.0/28), or dash range (e.g. 1.2.3.1-1.2.3.20).",
+                    },
+                    "request_id": request_id,
+                }
+            ),
+            400,
+        )
+
+    scan_id = f"INET-{uuid.uuid4().hex[:8].upper()}"
+
+    try:
+        scan = Scan(
+            scan_id=scan_id,
+            operator_name=operator_name,
+            status="running",
+            network_range=target,
+            started_at=datetime.utcnow(),
+        )
+        db.session.add(scan)
+        db.session.commit()
+
+        socketio.start_background_task(
+            execute_internet_scan,
+            app.app_context(),
+            scan.id,
+            scan_id,
+            target,
+            operator_name,
+        )
+
+        return (
+            jsonify(
+                {
+                    "success": True,
+                    "data": {"scan_id": scan_id, "status": "running"},
+                    "error": None,
+                    "request_id": request_id,
+                }
+            ),
+            202,
+        )
+    except Exception as e:
+        db.session.rollback()
+        current_app.logger.error(f"Failed to start internet scan: {e}")
+        return (
+            jsonify(
+                {
+                    "success": False,
+                    "data": None,
+                    "error": {"code": "scan.create_failed", "message": "Failed to create internet scan"},
+                    "request_id": request_id,
+                }
+            ),
+            500,
+        )
+
+
+def execute_internet_scan(
+    app_context, db_scan_id: int, scan_id: str, target: str, operator: str
+):
+    """Execute the internet scan pipeline in a background task."""
+    with app_context:
+        scan = None
+        try:
+            scan = Scan.query.get(db_scan_id)
+            if not scan:
+                raise ValueError(f"Scan {db_scan_id} not found in database")
+
+            # Phase 1: Internet Discovery
+            socketio.emit(
+                "scan_progress",
+                {
+                    "scan_id": scan_id,
+                    "phase": "discovery",
+                    "progress": 0,
+                    "message": f"Starting internet scan on {target}...",
+                },
+            )
+
+            def discovery_callback(event):
+                if event.get("type") == "host_discovered":
+                    host = event.get("host", {})
+                    socketio.emit(
+                        "scan_progress",
+                        {
+                            "scan_id": scan_id,
+                            "phase": "discovery",
+                            "progress": event.get("progress", 0),
+                            "message": f"Found host: {host.get('ip_address', '')}",
+                        },
+                    )
+
+            hosts = internet_scanner.scan_target(target, discovery_callback)
+            scan.total_hosts_found = len(hosts)
+            db.session.commit()
+
+            socketio.emit(
+                "scan_progress",
+                {
+                    "scan_id": scan_id,
+                    "phase": "discovery",
+                    "progress": 100,
+                    "message": f"Found {len(hosts)} hosts with open CCTV ports",
+                },
+            )
+
+            # Phase 2: Device Identification
+            socketio.emit(
+                "scan_progress",
+                {
+                    "scan_id": scan_id,
+                    "phase": "identification",
+                    "progress": 0,
+                    "message": "Identifying CCTV devices...",
+                },
+            )
+
+            # Build ports_data and banners_data from internet scanner results
+            ports_data = {h["ip_address"]: h.get("open_ports", []) for h in hosts}
+            banners_data = {h["ip_address"]: h.get("banners", {}) for h in hosts}
+
+            # Use the pre-fingerprinted device data from internet_scanner directly.
+            # bulk_identify is called with the full host info so it can merge OUI/port
+            # analysis on top of the already-computed fingerprint fields.
+            try:
+                identified = device_identifier.bulk_identify(
+                    hosts, ports_data, banners_data
+                )
+                cctv_devices = device_identifier.filter_cctv_devices(identified)
+            except Exception as e:
+                logger.error(f"Device identification failed: {e}")
+                # Fall back to using the internet_scanner fingerprint data directly
+                identified = hosts
+                cctv_devices = [h for h in hosts if h.get("is_cctv")]
+
+            scan.cctv_devices_found = len(cctv_devices)
+            db.session.commit()
+
+            socketio.emit(
+                "scan_progress",
+                {
+                    "scan_id": scan_id,
+                    "phase": "identification",
+                    "progress": 100,
+                    "message": f"Identified {len(cctv_devices)} CCTV devices",
+                },
+            )
+
+            # Phase 3: Vulnerability Scanning
+            socketio.emit(
+                "scan_progress",
+                {
+                    "scan_id": scan_id,
+                    "phase": "vulnerability",
+                    "progress": 0,
+                    "message": "Scanning for vulnerabilities...",
+                },
+            )
+
+            total_vulns = 0
+            severity_counts = {"critical": 0, "high": 0, "medium": 0, "low": 0}
+
+            for idx, device_info in enumerate(identified):
+                ip = device_info.get("ip_address")
+                if not ip:
+                    continue
+
+                try:
+                    device = Device(
+                        scan_id=scan.id,
+                        ip_address=ip,
+                        mac_address=device_info.get("mac_address"),
+                        manufacturer=device_info.get("manufacturer"),
+                        device_type=device_info.get("device_type"),
+                        is_cctv=device_info.get("is_cctv", False),
+                        confidence_score=device_info.get("confidence_score", 0),
+                    )
+                    db.session.add(device)
+                    db.session.flush()
+
+                    for port_info in ports_data.get(ip, []):
+                        port = Port(
+                            device_id=device.id,
+                            port_number=port_info.get("port_number"),
+                            protocol=port_info.get("protocol", "tcp"),
+                            state=port_info.get("state", "open"),
+                            service_name=port_info.get("service_name"),
+                            banner=banners_data.get(ip, {}).get(port_info.get("port_number")),
+                        )
+                        db.session.add(port)
+
+                    if device_info.get("is_cctv"):
+                        try:
+                            vuln_result = vulnerability_scanner.scan_device(
+                                device_info, ports_data.get(ip, []), deep_scan=True
+                            )
+                            for vuln_info in vuln_result.get("vulnerabilities", []):
+                                vuln = Vulnerability(
+                                    device_id=device.id,
+                                    vuln_id=vuln_info.get("vuln_id"),
+                                    title=vuln_info.get("title"),
+                                    description=vuln_info.get("description"),
+                                    severity=vuln_info.get("severity"),
+                                    cvss_score=vuln_info.get("cvss_score"),
+                                    cve_id=vuln_info.get("cve_id"),
+                                    cwe_id=vuln_info.get("cwe_id"),
+                                    remediation=vuln_info.get("remediation"),
+                                    proof_of_concept=vuln_info.get("proof_of_concept"),
+                                    references=json.dumps(vuln_info.get("references", [])),
+                                )
+                                db.session.add(vuln)
+                                total_vulns += 1
+                                sev = vuln_info.get("severity", "low")
+                                if sev in severity_counts:
+                                    severity_counts[sev] += 1
+                        except Exception as e:
+                            logger.debug(f"Vulnerability scan failed for {ip}: {e}")
+
+                except Exception as e:
+                    logger.error(f"Device processing failed for {ip}: {e}")
+                    continue
+
+                progress = ((idx + 1) / len(identified)) * 100 if identified else 0
+                socketio.emit(
+                    "scan_progress",
+                    {
+                        "scan_id": scan_id,
+                        "phase": "vulnerability",
+                        "progress": progress,
+                        "message": f"Scanning {ip} for vulnerabilities...",
+                    },
+                )
+
+            scan.vulnerabilities_found = total_vulns
+            scan.critical_count = severity_counts["critical"]
+            scan.high_count = severity_counts["high"]
+            scan.medium_count = severity_counts["medium"]
+            scan.low_count = severity_counts["low"]
+            scan.status = "completed"
+            scan.completed_at = datetime.utcnow()
+            db.session.commit()
+
+            socketio.emit(
+                "scan_complete",
+                {"scan_id": scan_id, "status": "completed", "summary": scan.to_dict()},
+            )
+
+            logger.info(f"Internet scan {scan_id} completed successfully")
+
+        except Exception as e:
+            logger.error(f"Internet scan {scan_id} failed: {e}")
+            if scan:
+                scan.status = "failed"
+                scan.error_message = str(e)
+                scan.completed_at = datetime.utcnow()
+                db.session.commit()
             socketio.emit("scan_error", {"scan_id": scan_id, "error": str(e)})
 
 

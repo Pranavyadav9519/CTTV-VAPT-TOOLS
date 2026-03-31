@@ -129,6 +129,10 @@
                             <i class="fas fa-sliders-h"></i>
                             Advanced / Authorized
                         </button>
+                        <button class="tab-btn" data-tab="internet">
+                            <i class="fas fa-globe"></i>
+                            Internet Scan
+                        </button>
                     </div>
 
                     <!-- Tab Content -->
@@ -154,6 +158,16 @@
                             <h3 class="tab-title">Advanced / Authorized Scan</h3>
                             <p class="tab-description">
                                 Comprehensive penetration testing with credential-based authentication checks. Requires explicit authorization.
+                            </p>
+                        </div>
+
+                        <!-- Internet Scan Tab -->
+                        <div class="tab-pane" data-tab="internet">
+                            <h3 class="tab-title">Internet CCTV Scanner</h3>
+                            <p class="tab-description">
+                                Directly scan internet-facing CCTV devices on a specified IP or range — no API key required.
+                                Enter a single IP, CIDR range (e.g. <code>203.0.113.0/28</code>), or dash range (e.g. <code>203.0.113.1-203.0.113.20</code>).
+                                Only scan targets you own or have explicit written permission to test.
                             </p>
                         </div>
                     </div>

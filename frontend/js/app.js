@@ -80,8 +80,20 @@ if (window.io) {
 
     socket.on('scan_complete', async (payload) => {
       try {
-        showNotification('Discovery complete.', 'success');
+        showNotification('Scan complete. Navigating to Scan History...', 'success');
         const scanId = payload && (payload.scan_id || payload.scanId || payload.data && payload.data.scan_id);
+
+        // Auto-navigate to Scan History and reload the table
+        showView('scan_history');
+        const historyNavItem = Array.from(document.querySelectorAll('.nav-item')).find(
+          el => el.querySelector('span') && el.querySelector('span').textContent.trim() === 'Scan History'
+        );
+        if (historyNavItem) {
+          document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+          historyNavItem.classList.add('active');
+        }
+        loadScans();
+
         if (!scanId) return;
 
         // Request devices for this scan and render them exactly as returned
@@ -170,10 +182,24 @@ function updateScanInfo(tabName) {
       '<strong>Active Scan</strong> will perform detailed probing. May generate noticeable network traffic. Not recommended for critical production systems.',
     advanced:
       '<strong>Advanced / Authorized Scan</strong> performs penetration testing with authentication checks. Requires explicit written authorization.',
+    internet:
+      '<strong>Internet Scan</strong> directly probes internet-facing CCTV devices on the specified IP or range. Only scan targets you own or have explicit permission to test.',
   };
 
   if (scanInfoText && infoTexts[tabName]) {
     scanInfoText.innerHTML = infoTexts[tabName];
+  }
+
+  // Show/hide the manual target input depending on scan mode
+  const manualTargetContainerEl = document.getElementById('manual-target-container');
+  if (manualTargetContainerEl) {
+    manualTargetContainerEl.style.display = tabName === 'internet' ? 'block' : 'none';
+  }
+  const allowManualCheckboxEl = document.getElementById('allow-manual-target');
+  if (allowManualCheckboxEl) {
+    if (tabName === 'internet') {
+      allowManualCheckboxEl.checked = true;
+    }
   }
 }
 
@@ -274,14 +300,26 @@ async function triggerScan(targetIP, scanType) {
   scanButton.innerHTML = '<i class="fas fa-spinner"></i> Starting Scan...';
 
   try {
-    const response = await fetch('/api/scan/start', {
+    let endpoint = '/api/scan/start';
+    let body = {
+      network_range: targetIP,
+      scan_type: scanType,
+      operator_name: 'web_user',
+    };
+
+    if (scanType === 'internet') {
+      endpoint = '/api/scan/internet';
+      body = {
+        target: targetIP,
+        scan_type: 'internet',
+        operator_name: 'web_user',
+      };
+    }
+
+    const response = await fetch(endpoint, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ 
-        network_range: targetIP, 
-        scan_type: scanType,
-        operator_name: 'web_user'
-      }),
+      body: JSON.stringify(body),
     });
 
     if (!response.ok) {
@@ -390,6 +428,11 @@ function renderResults(devices) {
 
 // Validation helpers
 function isValidTarget(target) {
+  // Full dash range: x.x.x.x-x.x.x.x
+  const fullDashRange = /^(\d{1,3}\.){3}\d{1,3}-(\d{1,3}\.){3}\d{1,3}$/;
+  if (fullDashRange.test(target)) return true;
+
+  // Single IP, CIDR, or short dash range: x.x.x.x, x.x.x.x/prefix, x.x.x.a-b
   const ipRegex = /^(\d{1,3}\.){3}\d{1,3}(\/\d{1,2})?(-\d{1,3})?$/;
   if (ipRegex.test(target)) {
     const parts = target.split('/')[0].split('-')[0].split('.');
@@ -960,11 +1003,11 @@ function renderReportsTable(reports) {
         <td>${generatedDate}</td>
         <td>
           <div class="download-options">
-            <button class="btn-small" onclick="downloadReport(${report.id}, 'json')" title="Download as JSON">
-              <i class="fas fa-file-code"></i> JSON
+            <button class="btn-small" onclick="downloadReport(${report.id}, 'pdf')" title="Download as PDF">
+              <i class="fas fa-file-pdf"></i> PDF
             </button>
-            <button class="btn-small" onclick="downloadReport(${report.id}, 'html')" title="Download as HTML">
-              <i class="fas fa-file-html5"></i> HTML
+            <button class="btn-small" onclick="downloadReport(${report.id}, 'docx')" title="Download as Word">
+              <i class="fas fa-file-word"></i> Word
             </button>
           </div>
         </td>
@@ -1002,14 +1045,15 @@ function downloadReport(reportId, format = 'pdf') {
     // Create temporary anchor element
     const link = document.createElement('a');
     link.href = downloadUrl;
-    link.download = `report_${reportId}.${format === 'json' ? 'json' : 'html'}`;
+    const fileExtensions = {'pdf': 'pdf', 'docx': 'docx', 'json': 'json', 'html': 'html'};
+    link.download = `VAPT_Report_${reportId}.${fileExtensions[format] || format}`;
     
     // Trigger download
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
     
-    showNotification(`Report #${reportId} downloading...`, 'success');
+    showNotification(`Report #${reportId} downloading as ${format.toUpperCase()}...`, 'success');
   } catch (err) {
     console.error('Download error:', err);
     showNotification('Failed to download report', 'error');

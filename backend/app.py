@@ -14,13 +14,14 @@ from flask_cors import CORS
 from flask_socketio import SocketIO, emit
 
 # Import modules
-from config import Config, config_by_name
-from database.models import db, Scan, Device, Port, Vulnerability, AuditLog, Report
-from modules.network_scanner import NetworkScanner
-from modules.device_identifier import DeviceIdentifier
-from modules.port_scanner import PortScanner
-from modules.vulnerability_scanner import VulnerabilityScanner
-from modules.report_generator import ReportGenerator
+from backend.config import Config, config_by_name
+from backend.database.models import db, Scan, Device, Port, Vulnerability, AuditLog, Report
+from backend.modules.network_scanner import NetworkScanner
+from backend.modules.device_identifier import DeviceIdentifier
+from backend.modules.port_scanner import PortScanner
+from backend.modules.vulnerability_scanner import VulnerabilityScanner
+from backend.modules.report_generator import ReportGenerator
+from backend.modules.internet_scanner import InternetScanner
 import ipaddress
 from flask import current_app
 
@@ -68,6 +69,7 @@ device_identifier = DeviceIdentifier()
 port_scanner = PortScanner()
 vulnerability_scanner = VulnerabilityScanner()
 report_generator = ReportGenerator(str(Config.REPORTS_DIR))
+internet_scanner = InternetScanner()
 
 
 def audit_log(action: str):
@@ -878,6 +880,324 @@ def execute_scan(
                 scan.completed_at = datetime.utcnow()
                 db.session.commit()
 
+            socketio.emit("scan_error", {"scan_id": scan_id, "error": str(e)})
+
+
+@app.route("/api/scan/internet", methods=["POST"])
+@audit_log("internet_scan_started")
+@idempotency_required
+def start_internet_scan():
+    """Start a custom internet CCTV scanner scan on a specified target."""
+    data = request.get_json() or {}
+    operator_name = (data.get("operator_name") or "").strip()
+    target = (data.get("target") or "").strip()
+    request_id = request.headers.get("X-Request-ID") or str(uuid.uuid4())
+
+    if not operator_name:
+        return (
+            jsonify(
+                {
+                    "success": False,
+                    "data": None,
+                    "error": {"code": "operator.missing", "message": "Operator name is required"},
+                    "request_id": request_id,
+                }
+            ),
+            400,
+        )
+
+    if len(operator_name) > 100:
+        return (
+            jsonify(
+                {
+                    "success": False,
+                    "data": None,
+                    "error": {"code": "operator.invalid", "message": "Operator name too long"},
+                    "request_id": request_id,
+                }
+            ),
+            400,
+        )
+
+    if not target:
+        return (
+            jsonify(
+                {
+                    "success": False,
+                    "data": None,
+                    "error": {"code": "target.missing", "message": "Target IP / range is required"},
+                    "request_id": request_id,
+                }
+            ),
+            400,
+        )
+
+    # Validate that target is a parseable IP/range
+    if not internet_scanner.validate_target(target):
+        return (
+            jsonify(
+                {
+                    "success": False,
+                    "data": None,
+                    "error": {
+                        "code": "target.invalid",
+                        "message": "Invalid target. Use single IP, CIDR (e.g. 1.2.3.0/28), or dash range (e.g. 1.2.3.1-1.2.3.20).",
+                    },
+                    "request_id": request_id,
+                }
+            ),
+            400,
+        )
+
+    scan_id = f"INET-{uuid.uuid4().hex[:8].upper()}"
+
+    try:
+        scan = Scan(
+            scan_id=scan_id,
+            operator_name=operator_name,
+            status="running",
+            network_range=target,
+            started_at=datetime.utcnow(),
+        )
+        db.session.add(scan)
+        db.session.commit()
+
+        socketio.start_background_task(
+            execute_internet_scan,
+            app.app_context(),
+            scan.id,
+            scan_id,
+            target,
+            operator_name,
+        )
+
+        return (
+            jsonify(
+                {
+                    "success": True,
+                    "data": {"scan_id": scan_id, "status": "running"},
+                    "error": None,
+                    "request_id": request_id,
+                }
+            ),
+            202,
+        )
+    except Exception as e:
+        db.session.rollback()
+        current_app.logger.error(f"Failed to start internet scan: {e}")
+        return (
+            jsonify(
+                {
+                    "success": False,
+                    "data": None,
+                    "error": {"code": "scan.create_failed", "message": "Failed to create internet scan"},
+                    "request_id": request_id,
+                }
+            ),
+            500,
+        )
+
+
+def execute_internet_scan(
+    app_context, db_scan_id: int, scan_id: str, target: str, operator: str
+):
+    """Execute the internet scan pipeline in a background task."""
+    with app_context:
+        scan = None
+        try:
+            scan = Scan.query.get(db_scan_id)
+            if not scan:
+                raise ValueError(f"Scan {db_scan_id} not found in database")
+
+            # Phase 1: Internet Discovery
+            socketio.emit(
+                "scan_progress",
+                {
+                    "scan_id": scan_id,
+                    "phase": "discovery",
+                    "progress": 0,
+                    "message": f"Starting internet scan on {target}...",
+                },
+            )
+
+            def discovery_callback(event):
+                if event.get("type") == "host_discovered":
+                    host = event.get("host", {})
+                    socketio.emit(
+                        "scan_progress",
+                        {
+                            "scan_id": scan_id,
+                            "phase": "discovery",
+                            "progress": event.get("progress", 0),
+                            "message": f"Found host: {host.get('ip_address', '')}",
+                        },
+                    )
+
+            hosts = internet_scanner.scan_target(target, discovery_callback)
+            scan.total_hosts_found = len(hosts)
+            db.session.commit()
+
+            socketio.emit(
+                "scan_progress",
+                {
+                    "scan_id": scan_id,
+                    "phase": "discovery",
+                    "progress": 100,
+                    "message": f"Found {len(hosts)} hosts with open CCTV ports",
+                },
+            )
+
+            # Phase 2: Device Identification
+            socketio.emit(
+                "scan_progress",
+                {
+                    "scan_id": scan_id,
+                    "phase": "identification",
+                    "progress": 0,
+                    "message": "Identifying CCTV devices...",
+                },
+            )
+
+            # Build ports_data and banners_data from internet scanner results
+            ports_data = {h["ip_address"]: h.get("open_ports", []) for h in hosts}
+            banners_data = {h["ip_address"]: h.get("banners", {}) for h in hosts}
+
+            # Use the pre-fingerprinted device data from internet_scanner directly.
+            # bulk_identify is called with the full host info so it can merge OUI/port
+            # analysis on top of the already-computed fingerprint fields.
+            try:
+                identified = device_identifier.bulk_identify(
+                    hosts, ports_data, banners_data
+                )
+                cctv_devices = device_identifier.filter_cctv_devices(identified)
+            except Exception as e:
+                logger.error(f"Device identification failed: {e}")
+                # Fall back to using the internet_scanner fingerprint data directly
+                identified = hosts
+                cctv_devices = [h for h in hosts if h.get("is_cctv")]
+
+            scan.cctv_devices_found = len(cctv_devices)
+            db.session.commit()
+
+            socketio.emit(
+                "scan_progress",
+                {
+                    "scan_id": scan_id,
+                    "phase": "identification",
+                    "progress": 100,
+                    "message": f"Identified {len(cctv_devices)} CCTV devices",
+                },
+            )
+
+            # Phase 3: Vulnerability Scanning
+            socketio.emit(
+                "scan_progress",
+                {
+                    "scan_id": scan_id,
+                    "phase": "vulnerability",
+                    "progress": 0,
+                    "message": "Scanning for vulnerabilities...",
+                },
+            )
+
+            total_vulns = 0
+            severity_counts = {"critical": 0, "high": 0, "medium": 0, "low": 0}
+
+            for idx, device_info in enumerate(identified):
+                ip = device_info.get("ip_address")
+                if not ip:
+                    continue
+
+                try:
+                    device = Device(
+                        scan_id=scan.id,
+                        ip_address=ip,
+                        mac_address=device_info.get("mac_address"),
+                        manufacturer=device_info.get("manufacturer"),
+                        device_type=device_info.get("device_type"),
+                        is_cctv=device_info.get("is_cctv", False),
+                        confidence_score=device_info.get("confidence_score", 0),
+                    )
+
+                    db.session.add(device)
+                    db.session.flush()
+
+                    for port_info in ports_data.get(ip, []):
+                        port = Port(
+                            device_id=device.id,
+                            port_number=port_info.get("port_number"),
+                            protocol=port_info.get("protocol", "tcp"),
+                            state=port_info.get("state", "open"),
+                            service_name=port_info.get("service_name"),
+                            banner=banners_data.get(ip, {}).get(port_info.get("port_number")),
+                        )
+                        db.session.add(port)
+
+                    if device_info.get("is_cctv"):
+                        try:
+                            vuln_result = vulnerability_scanner.scan_device(
+                                device_info, ports_data.get(ip, []), deep_scan=True
+                            )
+                            for vuln_info in vuln_result.get("vulnerabilities", []):
+                                vuln = Vulnerability(
+                                    device_id=device.id,
+                                    vuln_id=vuln_info.get("vuln_id"),
+                                    title=vuln_info.get("title"),
+                                    description=vuln_info.get("description"),
+                                    severity=vuln_info.get("severity"),
+                                    cvss_score=vuln_info.get("cvss_score"),
+                                    cve_id=vuln_info.get("cve_id"),
+                                    cwe_id=vuln_info.get("cwe_id"),
+                                    remediation=vuln_info.get("remediation"),
+                                    proof_of_concept=vuln_info.get("proof_of_concept"),
+                                    references=json.dumps(vuln_info.get("references", [])),
+                                )
+                                db.session.add(vuln)
+                                total_vulns += 1
+                                sev = vuln_info.get("severity", "low")
+                                if sev in severity_counts:
+                                    severity_counts[sev] += 1
+                        except Exception as e:
+                            logger.debug(f"Vulnerability scan failed for {ip}: {e}")
+
+                except Exception as e:
+                    logger.error(f"Device processing failed for {ip}: {e}")
+                    continue
+
+                progress = ((idx + 1) / len(identified)) * 100 if identified else 0
+                socketio.emit(
+                    "scan_progress",
+                    {
+                        "scan_id": scan_id,
+                        "phase": "vulnerability",
+                        "progress": progress,
+                        "message": f"Scanning {ip} for vulnerabilities...",
+                    },
+                )
+
+            scan.vulnerabilities_found = total_vulns
+            scan.critical_count = severity_counts["critical"]
+            scan.high_count = severity_counts["high"]
+            scan.medium_count = severity_counts["medium"]
+            scan.low_count = severity_counts["low"]
+            scan.status = "completed"
+            scan.completed_at = datetime.utcnow()
+            db.session.commit()
+
+            socketio.emit(
+                "scan_complete",
+                {"scan_id": scan_id, "status": "completed", "summary": scan.to_dict()},
+            )
+
+            logger.info(f"Internet scan {scan_id} completed successfully")
+
+        except Exception as e:
+            logger.error(f"Internet scan {scan_id} failed: {e}")
+            if scan:
+                scan.status = "failed"
+                scan.error_message = str(e)
+                scan.completed_at = datetime.utcnow()
+                db.session.commit()
             socketio.emit("scan_error", {"scan_id": scan_id, "error": str(e)})
 
 
@@ -2044,8 +2364,180 @@ def download_report(report_id):
                 download_name=f"VAPT_Report_{scan.scan_id}.html"
             )
         
+        elif report_format == 'docx':
+            # Generate Word (.docx) report
+            try:
+                from docx import Document
+                from docx.shared import Inches, Pt, RGBColor
+                from docx.enum.text import WD_ALIGN_PARAGRAPH
+                from io import BytesIO
+                
+                # Create document
+                doc = Document()
+                
+                # Add title
+                title = doc.add_heading('CCTV VAPT Report', level=0)
+                title.alignment = WD_ALIGN_PARAGRAPH.CENTER
+                
+                # Add scan information section
+                doc.add_heading('Scan Information', level=1)
+                scan_info_table = doc.add_table(rows=6, cols=2)
+                scan_info_table.style = 'Light Grid Accent 1'
+                cells = scan_info_table.rows[0].cells
+                cells[0].text = 'Scan ID'
+                cells[1].text = scan.scan_id
+                
+                cells = scan_info_table.rows[1].cells
+                cells[0].text = 'Operator'
+                cells[1].text = scan.operator_name
+                
+                cells = scan_info_table.rows[2].cells
+                cells[0].text = 'Network Range'
+                cells[1].text = scan.network_range
+                
+                cells = scan_info_table.rows[3].cells
+                cells[0].text = 'Status'
+                cells[1].text = scan.status.upper()
+                
+                cells = scan_info_table.rows[4].cells
+                cells[0].text = 'Started'
+                cells[1].text = scan.started_at.strftime('%Y-%m-%d %H:%M:%S') if scan.started_at else 'N/A'
+                
+                cells = scan_info_table.rows[5].cells
+                cells[0].text = 'Completed'
+                cells[1].text = scan.completed_at.strftime('%Y-%m-%d %H:%M:%S') if scan.completed_at else 'N/A'
+                
+                # Add executive summary
+                doc.add_heading('Executive Summary', level=1)
+                summary_table = doc.add_table(rows=4, cols=2)
+                summary_table.style = 'Light Grid Accent 1'
+                
+                cells = summary_table.rows[0].cells
+                cells[0].text = 'Total Devices'
+                cells[1].text = str(len(devices))
+                
+                cells = summary_table.rows[1].cells
+                cells[0].text = 'CCTV Devices'
+                cells[1].text = str(len([d for d in devices if d.is_cctv]))
+                
+                cells = summary_table.rows[2].cells
+                cells[0].text = 'Total Open Ports'
+                cells[1].text = str(sum(d.ports.count() for d in devices))
+                
+                cells = summary_table.rows[3].cells
+                cells[0].text = 'Total Vulnerabilities'
+                cells[1].text = str(len(vulnerabilities))
+                
+                # Add vulnerability severity breakdown
+                critical = [v for v in vulnerabilities if v.severity == 'critical']
+                high = [v for v in vulnerabilities if v.severity == 'high']
+                medium = [v for v in vulnerabilities if v.severity == 'medium']
+                low = [v for v in vulnerabilities if v.severity == 'low']
+                
+                doc.add_heading('Vulnerability Severity Breakdown', level=1)
+                severity_table = doc.add_table(rows=4, cols=2)
+                severity_table.style = 'Light Grid Accent 1'
+                
+                cells = severity_table.rows[0].cells
+                cells[0].text = 'CRITICAL'
+                critical_cell = cells[1]
+                critical_cell.text = str(len(critical))
+                critical_cell.paragraphs[0].runs[0].font.color.rgb = RGBColor(198, 40, 40)
+                
+                cells = severity_table.rows[1].cells
+                cells[0].text = 'HIGH'
+                high_cell = cells[1]
+                high_cell.text = str(len(high))
+                high_cell.paragraphs[0].runs[0].font.color.rgb = RGBColor(230, 81, 0)
+                
+                cells = severity_table.rows[2].cells
+                cells[0].text = 'MEDIUM'
+                medium_cell = cells[1]
+                medium_cell.text = str(len(medium))
+                medium_cell.paragraphs[0].runs[0].font.color.rgb = RGBColor(46, 125, 50)
+                
+                cells = severity_table.rows[3].cells
+                cells[0].text = 'LOW'
+                low_cell = cells[1]
+                low_cell.text = str(len(low))
+                
+                # Add vulnerabilities section
+                if vulnerabilities:
+                    doc.add_heading('Detailed Vulnerabilities', level=1)
+                    vuln_table = doc.add_table(rows=len(vulnerabilities) + 1, cols=5)
+                    vuln_table.style = 'Light Grid Accent 1'
+                    
+                    # Header row
+                    header_cells = vuln_table.rows[0].cells
+                    header_cells[0].text = 'CVE ID'
+                    header_cells[1].text = 'Title'
+                    header_cells[2].text = 'Severity'
+                    header_cells[3].text = 'CVSS'
+                    header_cells[4].text = 'Remediation'
+                    
+                    # Data rows
+                    for idx, v in enumerate(vulnerabilities, 1):
+                        cells = vuln_table.rows[idx].cells
+                        cells[0].text = v.cve_id or 'N/A'
+                        cells[1].text = v.title[:40] + '...' if len(v.title) > 40 else v.title
+                        cells[2].text = v.severity.upper() if v.severity else 'UNKNOWN'
+                        cells[3].text = str(v.cvss_score) if v.cvss_score else 'N/A'
+                        cells[4].text = (v.remediation[:50] + '...') if v.remediation and len(v.remediation) > 50 else (v.remediation or 'N/A')
+                else:
+                    doc.add_paragraph('No vulnerabilities found during this scan.')
+                
+                # Add discovered devices section
+                doc.add_heading('Discovered Devices', level=1)
+                if devices:
+                    devices_table = doc.add_table(rows=len(devices) + 1, cols=4)
+                    devices_table.style = 'Light Grid Accent 1'
+                    
+                    # Header row
+                    header_cells = devices_table.rows[0].cells
+                    header_cells[0].text = 'IP Address'
+                    header_cells[1].text = 'MAC Address'
+                    header_cells[2].text = 'Device Type'
+                    header_cells[3].text = 'Open Ports'
+                    
+                    # Data rows
+                    for idx, device in enumerate(devices, 1):
+                        cells = devices_table.rows[idx].cells
+                        cells[0].text = device.ip_address
+                        cells[1].text = device.mac_address or 'N/A'
+                        cells[2].text = 'CCTV' if device.is_cctv else (device.device_type or 'Unknown')
+                        cells[3].text = str(device.ports.count())
+                else:
+                    doc.add_paragraph('No devices discovered.')
+                
+                # Add footer
+                doc.add_paragraph()
+                footer = doc.add_paragraph('Generated by CCTV VAPT Platform')
+                footer.alignment = WD_ALIGN_PARAGRAPH.CENTER
+                footer_run = footer.runs[0]
+                footer_run.font.size = Pt(10)
+                footer_run.font.color.rgb = RGBColor(128, 128, 128)
+                
+                # Save to BytesIO
+                doc_io = BytesIO()
+                doc.save(doc_io)
+                doc_io.seek(0)
+                
+                return send_file(
+                    doc_io,
+                    mimetype='application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+                    as_attachment=True,
+                    download_name=f"VAPT_Report_{scan.scan_id}.docx"
+                )
+                
+            except ImportError:
+                logger.error("python-docx not installed. Please install: pip install python-docx")
+                return jsonify({"error": "Word generation not available. Install python-docx: pip install python-docx"}), 500
+            except Exception as e:
+                logger.error(f"Word generation error: {e}")
+                return jsonify({"error": f"Failed to generate Word document: {str(e)}"}), 500
+        
         else:
-            return jsonify({"error": "Invalid format. Use 'txt', 'json', 'html', or 'pdf'"}), 400
+            return jsonify({"error": "Invalid format. Use 'json', 'html', 'pdf', or 'docx'"}), 400
             
     except Exception as e:
         logger.error(f"Report download error: {e}")

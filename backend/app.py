@@ -631,7 +631,7 @@ def start_internet_scan():
                 {
                     "success": False,
                     "data": None,
-                    "error": {"code": "scan.create_failed", "message": str(e)},
+                    "error": {"code": "scan.create_failed", "message": "Failed to create internet scan"},
                     "request_id": request_id,
                 }
             ),

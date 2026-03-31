@@ -273,6 +273,365 @@ def start_scan():
         )
 
 
+
+
+@app.route("/api/scan/demo", methods=["POST"])
+def start_demo_scan():
+    """Start a demo scan with simulated CCTV devices for presentation purposes"""
+    import time
+
+    scan_id = f"DEMO-{uuid.uuid4().hex[:8].upper()}"
+    request_id = str(uuid.uuid4())
+
+    try:
+        scan = Scan(
+            scan_id=scan_id,
+            operator_name="Demo User",
+            status="running",
+            scan_type="network_discovery",
+            network_range="192.168.1.0/24 (Demo)",
+            started_at=datetime.utcnow(),
+        )
+        db.session.add(scan)
+        db.session.flush()
+        db_scan_id = scan.id
+        db.session.commit()
+
+        socketio.start_background_task(_run_demo_scan, app.app_context(), db_scan_id, scan_id)
+
+        return (
+            jsonify(
+                {
+                    "success": True,
+                    "data": {"scan_id": scan_id, "status": "running"},
+                    "error": None,
+                    "request_id": request_id,
+                }
+            ),
+            202,
+        )
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f"Failed to start demo scan: {e}")
+        return (
+            jsonify(
+                {
+                    "success": False,
+                    "data": None,
+                    "error": {"code": "demo.create_failed", "message": "Failed to start demo scan"},
+                    "request_id": request_id,
+                }
+            ),
+            500,
+        )
+
+
+def _run_demo_scan(app_context, db_scan_id: int, scan_id: str):
+    """Run the demo scan simulation with realistic delays and Socket.IO events"""
+    import time
+
+    with app_context:
+        try:
+            scan = Scan.query.get(db_scan_id)
+            if not scan:
+                return
+
+            # --- Demo device definitions ---
+            demo_devices = [
+                {
+                    "ip": "192.168.1.1",
+                    "hostname": "router.local",
+                    "manufacturer": "TP-Link",
+                    "device_type": "router",
+                    "model": "Archer C7",
+                    "is_cctv": False,
+                    "ports": [(80, "http"), (443, "https"), (22, "ssh")],
+                    "vulns": [],
+                },
+                {
+                    "ip": "192.168.1.10",
+                    "hostname": "HIK-DVR-01",
+                    "manufacturer": "Hikvision",
+                    "device_type": "dvr",
+                    "model": "DS-7208HQHI-K2",
+                    "is_cctv": True,
+                    "ports": [
+                        (80, "http"),
+                        (443, "https"),
+                        (554, "rtsp"),
+                        (8000, "hikvision-sdk"),
+                        (8200, "hikvision-web"),
+                    ],
+                    "vulns": [
+                        {
+                            "vuln_id": "CCTV-001",
+                            "title": "Default Credentials Active",
+                            "description": "Device uses factory default username/password (admin/12345). Attackers can gain full administrative access.",
+                            "severity": "critical",
+                            "cvss_score": 9.8,
+                            "cve_id": "CVE-2017-7921",
+                            "remediation": "Change default credentials immediately. Use a strong unique password.",
+                        },
+                        {
+                            "vuln_id": "CCTV-002",
+                            "title": "RTSP Stream Unauthenticated",
+                            "description": "The RTSP video stream on port 554 is accessible without authentication, exposing live camera footage.",
+                            "severity": "high",
+                            "cvss_score": 7.5,
+                            "cve_id": None,
+                            "remediation": "Enable RTSP authentication in device settings.",
+                        },
+                        {
+                            "vuln_id": "CCTV-003",
+                            "title": "Firmware Information Disclosure",
+                            "description": "HTTP response headers expose firmware version details that aid targeted exploitation.",
+                            "severity": "medium",
+                            "cvss_score": 5.3,
+                            "cve_id": None,
+                            "remediation": "Disable verbose HTTP headers or update firmware.",
+                        },
+                    ],
+                },
+                {
+                    "ip": "192.168.1.15",
+                    "hostname": "DAHUA-NVR-01",
+                    "manufacturer": "Dahua",
+                    "device_type": "nvr",
+                    "model": "NVR4108-P-4KS2",
+                    "is_cctv": True,
+                    "ports": [
+                        (80, "http"),
+                        (554, "rtsp"),
+                        (37777, "dahua-sdk"),
+                        (37778, "dahua-web"),
+                    ],
+                    "vulns": [
+                        {
+                            "vuln_id": "CCTV-001",
+                            "title": "Default Credentials Active",
+                            "description": "Device uses factory default username/password (admin/admin). Full administrative access is trivially obtainable.",
+                            "severity": "critical",
+                            "cvss_score": 9.8,
+                            "cve_id": "CVE-2021-33044",
+                            "remediation": "Change default credentials immediately.",
+                        },
+                        {
+                            "vuln_id": "CCTV-004",
+                            "title": "Telnet Service Enabled",
+                            "description": "Telnet (port 23) is enabled, transmitting credentials in plaintext over the network.",
+                            "severity": "high",
+                            "cvss_score": 7.2,
+                            "cve_id": None,
+                            "remediation": "Disable Telnet. Use SSH for remote management.",
+                        },
+                        {
+                            "vuln_id": "CCTV-005",
+                            "title": "HTTP Without HTTPS Redirect",
+                            "description": "Web interface is accessible over unencrypted HTTP on port 80 with no redirect to HTTPS.",
+                            "severity": "medium",
+                            "cvss_score": 5.0,
+                            "cve_id": None,
+                            "remediation": "Enable HTTPS and redirect all HTTP traffic to HTTPS.",
+                        },
+                    ],
+                },
+                {
+                    "ip": "192.168.1.20",
+                    "hostname": "LAPTOP-USER",
+                    "manufacturer": "Dell",
+                    "device_type": "laptop",
+                    "model": "Inspiron 15",
+                    "is_cctv": False,
+                    "ports": [(445, "smb"), (135, "msrpc")],
+                    "vulns": [],
+                },
+                {
+                    "ip": "192.168.1.25",
+                    "hostname": "AXIS-CAM-01",
+                    "manufacturer": "Axis",
+                    "device_type": "camera",
+                    "model": "P3245-V",
+                    "is_cctv": True,
+                    "ports": [(80, "http"), (443, "https"), (554, "rtsp")],
+                    "vulns": [
+                        {
+                            "vuln_id": "CCTV-002",
+                            "title": "RTSP Stream Unauthenticated",
+                            "description": "RTSP stream accessible without authentication on port 554.",
+                            "severity": "high",
+                            "cvss_score": 7.5,
+                            "cve_id": None,
+                            "remediation": "Enable RTSP authentication in camera settings.",
+                        },
+                        {
+                            "vuln_id": "CCTV-006",
+                            "title": "Missing Security Headers",
+                            "description": "HTTP responses lack security headers (X-Frame-Options, CSP, HSTS), increasing risk of clickjacking.",
+                            "severity": "low",
+                            "cvss_score": 3.1,
+                            "cve_id": None,
+                            "remediation": "Configure the web server to include recommended security headers.",
+                        },
+                    ],
+                },
+                {
+                    "ip": "192.168.1.30",
+                    "hostname": "android-phone",
+                    "manufacturer": "Samsung",
+                    "device_type": "mobile",
+                    "model": "Galaxy S21",
+                    "is_cctv": False,
+                    "ports": [(8080, "http-alt")],
+                    "vulns": [],
+                },
+            ]
+
+            total_steps = len(demo_devices) + 2  # discovery + per-device + completion
+            step = 0
+
+            # Phase 1: Discovery
+            socketio.emit("scan_progress", {
+                "scan_id": scan_id, "phase": "discovery", "progress": 0,
+                "message": "Starting network discovery on 192.168.1.0/24...",
+            })
+            time.sleep(1.5)
+
+            for dev in demo_devices:
+                step += 1
+                progress = int((step / total_steps) * 40)
+                socketio.emit("scan_progress", {
+                    "scan_id": scan_id, "phase": "discovery", "progress": progress,
+                    "message": f"Discovered host: {dev['ip']}",
+                    "host": {"ip_address": dev["ip"], "hostname": dev.get("hostname", "")},
+                })
+                time.sleep(0.6)
+
+            scan.total_hosts_found = len(demo_devices)
+            db.session.commit()
+
+            # Phase 2: Port scanning
+            socketio.emit("scan_progress", {
+                "scan_id": scan_id, "phase": "ports", "progress": 40,
+                "message": "Starting port scan on discovered hosts...",
+            })
+            time.sleep(1.0)
+
+            cctv_count = 0
+            total_vulns = 0
+            severity_counts = {"critical": 0, "high": 0, "medium": 0, "low": 0}
+
+            for idx, dev in enumerate(demo_devices):
+                port_progress = 40 + int(((idx + 1) / len(demo_devices)) * 30)
+                socketio.emit("scan_progress", {
+                    "scan_id": scan_id, "phase": "ports", "progress": port_progress,
+                    "message": f"Scanning ports on {dev['ip']}...",
+                })
+
+                device = Device(
+                    scan_id=db_scan_id,
+                    ip_address=dev["ip"],
+                    hostname=dev.get("hostname"),
+                    manufacturer=dev.get("manufacturer"),
+                    device_type=dev.get("device_type"),
+                    model=dev.get("model"),
+                    is_cctv=dev["is_cctv"],
+                    confidence_score=0.95 if dev["is_cctv"] else 0.3,
+                    discovered_at=datetime.utcnow(),
+                )
+                db.session.add(device)
+                db.session.flush()
+
+                for port_num, svc_name in dev["ports"]:
+                    port = Port(
+                        device_id=device.id,
+                        port_number=port_num,
+                        protocol="tcp",
+                        state="open",
+                        service_name=svc_name,
+                    )
+                    db.session.add(port)
+
+                if dev["is_cctv"]:
+                    cctv_count += 1
+
+                time.sleep(0.5)
+
+            db.session.commit()
+
+            # Phase 3: Vulnerability scanning
+            socketio.emit("scan_progress", {
+                "scan_id": scan_id, "phase": "vulnerability", "progress": 70,
+                "message": "Scanning CCTV devices for vulnerabilities...",
+            })
+            time.sleep(1.0)
+
+            # Re-query devices to attach vulnerabilities
+            db_devices = Device.query.filter_by(scan_id=db_scan_id).all()
+            ip_to_db_device = {d.ip_address: d for d in db_devices}
+
+            for idx, dev in enumerate(demo_devices):
+                vuln_progress = 70 + int(((idx + 1) / len(demo_devices)) * 25)
+                socketio.emit("scan_progress", {
+                    "scan_id": scan_id, "phase": "vulnerability", "progress": vuln_progress,
+                    "message": f"Checking vulnerabilities on {dev['ip']}...",
+                })
+
+                db_dev = ip_to_db_device.get(dev["ip"])
+                if db_dev:
+                    for vuln_info in dev["vulns"]:
+                        vuln = Vulnerability(
+                            device_id=db_dev.id,
+                            vuln_id=vuln_info["vuln_id"],
+                            title=vuln_info["title"],
+                            description=vuln_info["description"],
+                            severity=vuln_info["severity"],
+                            cvss_score=vuln_info.get("cvss_score"),
+                            cve_id=vuln_info.get("cve_id"),
+                            remediation=vuln_info.get("remediation"),
+                            references=json.dumps([]),
+                        )
+                        db.session.add(vuln)
+                        total_vulns += 1
+                        sev = vuln_info["severity"]
+                        if sev in severity_counts:
+                            severity_counts[sev] += 1
+
+                time.sleep(0.4)
+
+            db.session.commit()
+
+            # Finalize scan record
+            scan.cctv_devices_found = cctv_count
+            scan.vulnerabilities_found = total_vulns
+            scan.critical_count = severity_counts["critical"]
+            scan.high_count = severity_counts["high"]
+            scan.medium_count = severity_counts["medium"]
+            scan.low_count = severity_counts["low"]
+            scan.status = "completed"
+            scan.completed_at = datetime.utcnow()
+            db.session.commit()
+
+            socketio.emit("scan_complete", {
+                "scan_id": scan_id,
+                "status": "completed",
+                "summary": scan.to_dict(),
+            })
+            logger.info(f"Demo scan {scan_id} completed successfully")
+
+        except Exception as e:
+            logger.error(f"Demo scan {scan_id} failed: {e}")
+            try:
+                scan = Scan.query.get(db_scan_id)
+                if scan:
+                    scan.status = "failed"
+                    scan.error_message = str(e)
+                    scan.completed_at = datetime.utcnow()
+                    db.session.commit()
+            except Exception:
+                pass
+            socketio.emit("scan_error", {"scan_id": scan_id, "error": str(e)})
+
+
 def execute_scan(
     app_context, db_scan_id: int, scan_id: str, network_range: str, operator: str
 ):

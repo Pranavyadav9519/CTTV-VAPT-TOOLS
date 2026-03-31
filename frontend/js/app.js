@@ -229,6 +229,44 @@ scanButton?.addEventListener('click', (e) => {
   startDiscovery(scanType);
 });
 
+// Demo Mode button handler
+const demoButton = document.getElementById('btn-demo-scan');
+demoButton?.addEventListener('click', async (e) => {
+  e.preventDefault();
+  const originalText = demoButton.innerHTML;
+  demoButton.disabled = true;
+  demoButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> <span>Starting Demo...</span>';
+
+  try {
+    const response = await fetch('/api/scan/demo', { method: 'POST' });
+    if (!response.ok) {
+      showNotification('Failed to start demo scan. Please try again.', 'error');
+      return;
+    }
+    const data = await response.json();
+    showNotification('Demo scan started - simulating CCTV network discovery...', 'info');
+
+    const scanId = data.data && data.data.scan_id;
+    if (scanId && socket) {
+      socket.once('scan_complete', () => {
+        showNotification('Demo scan complete! Check Scan History for results.', 'success');
+        // Auto-navigate to scan history
+        const navItemsAll = document.querySelectorAll('.nav-item');
+        navItemsAll.forEach((i) => i.classList.remove('active'));
+        if (navItemsAll[1]) navItemsAll[1].classList.add('active');
+        showView('scan_history');
+        loadScans();
+      });
+    }
+  } catch (err) {
+    console.error('Demo scan error:', err);
+    showNotification('Failed to start demo scan. Please try again.', 'error');
+  } finally {
+    demoButton.disabled = false;
+    demoButton.innerHTML = originalText;
+  }
+});
+
 // Trigger targeted scan (calls backend API)
 async function triggerScan(targetIP, scanType) {
   const originalText = scanButton.innerHTML;
@@ -696,7 +734,7 @@ function showView(viewName) {
   const viewPages = document.querySelectorAll('.view-page');
   viewPages.forEach(page => page.classList.remove('active'));
   
-  const targetView = document.getElementById(`view-${viewName}`);
+  const targetView = document.getElementById(`view-${viewName.replace(/_/g, '-')}`);
   if (targetView) {
     targetView.classList.add('active');
   }
@@ -780,7 +818,7 @@ async function loadScans() {
     }
     
     const data = await response.json();
-    const scans = data.data || data || [];
+    const scans = (data.data && data.data.scans) || [];
     
     if (!scans.length) {
       showEmptyScans();

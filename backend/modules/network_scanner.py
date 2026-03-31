@@ -87,7 +87,7 @@ class NetworkScanner:
         for iface_info in interfaces:
             if not any(
                 x in iface_info["interface"].lower()
-                for x in ["docker", "veth", "br-", "virbr"]
+                for x in ["docker", "veth", "br-", "virbr", "vbox", "virtualbox", "vmnet", "vmware"]
             ):
                 return iface_info
 
